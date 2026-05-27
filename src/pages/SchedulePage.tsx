@@ -40,7 +40,7 @@ export function SchedulePage(): JSX.Element {
   }, [isParent, t]);
 
   return (
-    <section className="panel">
+    <section className="panel parent-flow-page">
       <h1 className="headline">{t("scheduleTitle")}</h1>
       <p className="subline">{t("scheduleDescription")}</p>
 
@@ -53,7 +53,7 @@ export function SchedulePage(): JSX.Element {
             <p>{t("childrenListEmpty")}</p>
           ) : null}
           {!isLoading && !error && children.length > 0 ? (
-            <div className="children-grid">
+            <div className="children-grid parent-children-grid">
               {children.map((child) => (
                 <article key={child.id} className="child-card">
                   <p className="child-name">

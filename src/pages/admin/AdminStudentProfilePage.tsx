@@ -4,6 +4,28 @@ import { getAdminStudentProfile } from "../../shared/api/adminApi";
 import { ApiError } from "../../shared/api/httpClient";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { AdminStudentProfileDto } from "../../shared/types/admin";
+import { localizeStudentStatus } from "../../shared/i18n/backendLabels";
+
+function formatCurrentClass(value: unknown): string {
+  if (!value) {
+    return "-";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const name = record.name;
+    if (typeof name === "string" && name.trim()) {
+      return name;
+    }
+    const id = record.id;
+    if (typeof id === "string" && id.trim()) {
+      return id;
+    }
+  }
+  return "-";
+}
 
 export function AdminStudentProfilePage(): JSX.Element {
   const { t } = useI18n();
@@ -18,12 +40,13 @@ export function AdminStudentProfilePage(): JSX.Element {
       setIsLoading(false);
       return;
     }
+    const id = studentId;
 
     async function load(): Promise<void> {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await getAdminStudentProfile(studentId);
+        const response = await getAdminStudentProfile(id);
         setItem(response);
       } catch (loadError) {
         if (loadError instanceof ApiError) {
@@ -60,20 +83,24 @@ export function AdminStudentProfilePage(): JSX.Element {
             </dd>
           </div>
           <div>
-            <dt>{t("tableEmail")}</dt>
-            <dd>{item.email ?? "-"}</dd>
+            <dt>{t("tableStatus")}</dt>
+            <dd>{localizeStudentStatus(item.status, t)}</dd>
           </div>
           <div>
             <dt>{t("tableBirthDate")}</dt>
-            <dd>{item.birth_date ?? "-"}</dd>
+            <dd>{item.birth_date}</dd>
           </div>
           <div>
-            <dt>{t("tableParent")}</dt>
+            <dt>{t("tableClass")}</dt>
             <dd>
-              {item.parent ? (
-                <Link className="inline-link" to={`/admin/parents/${item.parent.id}`}>
-                  {`${item.parent.first_name} ${item.parent.last_name}`.trim() || item.parent.id}
-                </Link>
+              {formatCurrentClass(item.current_class)}
+            </dd>
+          </div>
+          <div>
+            <dt>{t("tableParentLinks")}</dt>
+            <dd>
+              {item.parent_links.length > 0 ? (
+                item.parent_links.map((linkItem) => linkItem.parent).join(", ")
               ) : (
                 "-"
               )}

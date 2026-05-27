@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
+import { FiCheck, FiCornerUpLeft, FiX } from "react-icons/fi";
 import {
   approveEnrollmentRequest,
   getAdminEnrollmentList,
-  rejectEnrollmentRequest
+  rejectEnrollmentRequest,
+  requestEnrollmentRelink
 } from "../../shared/api/adminApi";
 import { ApiError } from "../../shared/api/httpClient";
 import { useI18n } from "../../shared/i18n/I18nProvider";
+import { localizeEnrollmentStatus } from "../../shared/i18n/backendLabels";
 import { AdminEnrollmentItemDto } from "../../shared/types/admin";
 import { EnrollmentRequestStatus } from "../../shared/types/enrollment";
 
@@ -19,6 +22,8 @@ const ACTIVE_STATUSES: EnrollmentRequestStatus[] = [
 export function AdminEnrollmentsPage(): JSX.Element {
   const { t } = useI18n();
   const [items, setItems] = useState<AdminEnrollmentItemDto[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -28,7 +33,10 @@ export function AdminEnrollmentsPage(): JSX.Element {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getAdminEnrollmentList();
+      const response = await getAdminEnrollmentList({
+        search: search.trim() || undefined,
+        status: statusFilter || undefined
+      });
       setItems(response);
     } catch (loadError) {
       if (loadError instanceof ApiError) {
@@ -43,19 +51,21 @@ export function AdminEnrollmentsPage(): JSX.Element {
 
   useEffect(() => {
     void loadEnrollments();
-  }, [t]);
+  }, [t, search, statusFilter]);
 
   async function runModerationAction(
     id: string,
-    action: "approve" | "reject"
+    action: "approve" | "reject" | "relink"
   ): Promise<void> {
     setActionError(null);
     setActionLoadingId(id);
     try {
       if (action === "approve") {
         await approveEnrollmentRequest(id);
-      } else {
+      } else if (action === "reject") {
         await rejectEnrollmentRequest(id);
+      } else {
+        await requestEnrollmentRelink(id);
       }
       await loadEnrollments();
     } catch (moderationError) {
@@ -75,6 +85,29 @@ export function AdminEnrollmentsPage(): JSX.Element {
     <section className="admin-page">
       <h2 className="section-heading">{t("adminEnrollmentsTitle")}</h2>
       <p className="subline">{t("adminEnrollmentsDescription")}</p>
+      <div className="row">
+        <label className="field admin-filter-field">
+          <span>{t("searchLabel")}</span>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("searchPlaceholder")}
+          />
+        </label>
+        <label className="field admin-filter-field">
+          <span>{t("tableStatus")}</span>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="">{t("filterAll")}</option>
+            <option value="pending">{localizeEnrollmentStatus("pending", t)}</option>
+            <option value="approved">{localizeEnrollmentStatus("approved", t)}</option>
+            <option value="rejected">{localizeEnrollmentStatus("rejected", t)}</option>
+            <option value="needs_relink">{localizeEnrollmentStatus("needs_relink", t)}</option>
+          </select>
+        </label>
+      </div>
 
       {isLoading ? <p>{t("listLoading")}</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
@@ -91,7 +124,7 @@ export function AdminEnrollmentsPage(): JSX.Element {
                 <th>{t("tableChild")}</th>
                 <th>{t("tableStatus")}</th>
                 <th>{t("tableUpdatedAt")}</th>
-                <th>{t("tableActions")}</th>
+                <th className="actions-col">{t("tableActions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -107,25 +140,39 @@ export function AdminEnrollmentsPage(): JSX.Element {
                   <td>
                     {row.student_first_name} {row.student_last_name}
                   </td>
-                  <td>{row.status}</td>
+                  <td>{localizeEnrollmentStatus(row.status, t)}</td>
                   <td>{row.updated_at}</td>
-                  <td>
+                  <td className="actions-col">
                     <div className="table-actions">
                       <button
                         type="button"
-                        className="button"
+                        className="icon-action-button success"
+                        title={t("tooltipApprove")}
+                        aria-label={t("tooltipApprove")}
                         disabled={actionLoadingId === row.id || !canModerate}
                         onClick={() => void runModerationAction(row.id, "approve")}
                       >
-                        {actionLoadingId === row.id ? t("formSubmitting") : t("approveAction")}
+                        <FiCheck aria-hidden="true" />
                       </button>
                       <button
                         type="button"
-                        className="button secondary danger"
+                        className="icon-action-button danger"
+                        title={t("tooltipReject")}
+                        aria-label={t("tooltipReject")}
                         disabled={actionLoadingId === row.id || !canModerate}
                         onClick={() => void runModerationAction(row.id, "reject")}
                       >
-                        {actionLoadingId === row.id ? t("formSubmitting") : t("rejectAction")}
+                        <FiX aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-action-button"
+                        title={t("tooltipRequestRelink")}
+                        aria-label={t("tooltipRequestRelink")}
+                        disabled={actionLoadingId === row.id || !canModerate}
+                        onClick={() => void runModerationAction(row.id, "relink")}
+                      >
+                        <FiCornerUpLeft aria-hidden="true" />
                       </button>
                     </div>
                   </td>

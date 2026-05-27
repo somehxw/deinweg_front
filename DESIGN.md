@@ -670,6 +670,43 @@ Notion's geometry is sober-editorial — `{rounded.md}` (8px) buttons distinguis
 **`search-pill`** — Search bar.
 - Background `{colors.surface}`, text `{colors.steel}`, typography `{typography.body-md}`, rounded `{rounded.md}`, height 44px, border `1px solid {colors.hairline}`.
 
+### Application Onboarding Form (deinweg app baseline)
+
+Use this as the default style for all app forms/pages (enrollment, login, password setup, status, admin edit forms).
+
+**Layout**
+- Centered content block with width around `780px` for primary forms.
+- Vertical rhythm:
+  - Headline → progress/meta block: `~26px`
+  - Progress/meta block → form card: `~12px`
+  - Form card → primary actions: `~14px`
+- Mobile keeps single-column flow with comfortable spacing.
+
+**Form Card**
+- Background `{colors.canvas}`
+- Border `1px solid {colors.hairline}` (or equivalent softened hairline)
+- Rounded `22px` on desktop, `18px` on mobile
+- Padding `30px` desktop / `22px` mobile
+- Elevation: `rgba(15, 15, 15, 0.08) 0 12px 32px -10px`
+
+**Inputs**
+- Height `52px`
+- Rounded `12px`
+- Border `1px solid {colors.hairline-strong}`
+- Focus ring: soft purple outer ring + purple-leaning border
+- Placeholder and secondary text use muted slate variants
+
+**Buttons**
+- Primary actions are full-width in the action row
+- Button rounded `12px`, height `50px`, padding `12px 18px`
+- Secondary actions may stay compact but share the same corner family
+
+**Progress Tracker**
+- Minimal style (not tab-like and not button-like)
+- Step labels above a thin progress line
+- Muted inactive state, restrained purple active state
+- Tracker should be informational only (no click affordance)
+
 ### Tabs
 
 **`pill-tab`** + **`pill-tab-active`** — Pill-style tab nav for top-level switching.

@@ -1,8 +1,8 @@
 import { FormEvent, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createJwt } from "../../shared/api/authApi";
 import { ApiError } from "../../shared/api/httpClient";
-import { setAccessToken } from "../../shared/auth/tokenStorage";
+import { setAuthTokens } from "../../shared/auth/tokenStorage";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 
 export function LoginPage(): JSX.Element {
@@ -37,7 +37,11 @@ export function LoginPage(): JSX.Element {
         return;
       }
 
-      setAccessToken(response.access);
+      if (!response.refresh) {
+        setError(t("loginError"));
+        return;
+      }
+      setAuthTokens(response.access, response.refresh);
       navigate("/home", { replace: true });
     } catch (submitError) {
       if (submitError instanceof ApiError && submitError.status === 401) {
@@ -56,8 +60,10 @@ export function LoginPage(): JSX.Element {
       <p className="subline">{t("loginDescription")}</p>
 
       <form className="form-shell login-shell" onSubmit={onSubmit} noValidate>
-        {isRegistered ? <p className="success-text">{t("loginRegisteredSuccess")}</p> : null}
-        {isPasswordSet ? <p className="success-text">{t("loginPasswordSetSuccess")}</p> : null}
+        <div className="login-success-stack">
+          {isRegistered ? <p className="success-text">{t("loginRegisteredSuccess")}</p> : null}
+          {isPasswordSet ? <p className="success-text">{t("loginPasswordSetSuccess")}</p> : null}
+        </div>
 
         <div className="form-grid">
           <label className="field">
@@ -85,6 +91,15 @@ export function LoginPage(): JSX.Element {
           <button type="submit" className="button" disabled={isSubmitting}>
             {isSubmitting ? t("formSubmitting") : t("loginSubmit")}
           </button>
+        </div>
+
+        <div className="login-helper">
+          <p className="login-helper-text">
+            {t("loginNoAccount")}{" "}
+            <Link className="inline-link" to="/enrollment-request">
+              {t("loginGoToEnrollment")}
+            </Link>
+          </p>
         </div>
       </form>
     </section>

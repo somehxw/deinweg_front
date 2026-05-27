@@ -110,11 +110,11 @@ export function ParentCabinetPage(): JSX.Element {
   }, [children, selectedChildId]);
 
   return (
-    <section className="panel">
+    <section className="panel parent-flow-page">
       <h1 className="headline">{t("parentCabinetTitle")}</h1>
       <p className="subline">{t("parentCabinetDescription")}</p>
 
-      <div className="row">
+      <div className="row parent-flow-sections">
         <button
           type="button"
           className={`button secondary${activeSection === "schedule" ? " active" : ""}`}
@@ -147,7 +147,7 @@ export function ParentCabinetPage(): JSX.Element {
         ) : null}
 
         {!isLoading && !error && children.length > 0 ? (
-          <div className="child-selector">
+          <div className="child-selector parent-child-selector">
             {children.map((child) => {
               const isActive = child.id === selectedChild?.id;
               return (

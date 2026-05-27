@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 import { getUserRoleFromToken, setResolvedRole, UserRole } from "../shared/auth/roles";
-import { getAdminEnrollmentList } from "../shared/api/adminApi";
+import { getAdminEnrollmentList, getAdminLessonsList } from "../shared/api/adminApi";
 import { getParentChildren } from "../shared/api/parentApi";
 import { useI18n } from "../shared/i18n/I18nProvider";
 import { Link } from "react-router-dom";
+import { ApiError } from "../shared/api/httpClient";
+import { AdminLessonDto } from "../shared/types/admin";
+import { DashboardLessonsCalendar } from "../features/dashboard/components/DashboardLessonsCalendar";
 
 export function DashboardPage(): JSX.Element {
   const { t } = useI18n();
   const tokenRole = getUserRoleFromToken();
   const [role, setRole] = useState<UserRole>(tokenRole);
   const [isResolvingRole, setIsResolvingRole] = useState(tokenRole === "unknown");
+  const [lessons, setLessons] = useState<AdminLessonDto[]>([]);
+  const [isLessonsLoading, setIsLessonsLoading] = useState(false);
+  const [lessonsError, setLessonsError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +78,45 @@ export function DashboardPage(): JSX.Element {
     };
   }, [tokenRole]);
 
+  useEffect(() => {
+    if (isResolvingRole || role !== "admin") {
+      setLessons([]);
+      setLessonsError(null);
+      setIsLessonsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadLessons(): Promise<void> {
+      setIsLessonsLoading(true);
+      setLessonsError(null);
+      try {
+        const response = await getAdminLessonsList();
+        if (!cancelled) {
+          setLessons(response);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          if (error instanceof ApiError) {
+            setLessonsError(`${t("generalError")} (${error.status})`);
+          } else {
+            setLessonsError(t("generalError"));
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLessonsLoading(false);
+        }
+      }
+    }
+
+    void loadLessons();
+    return () => {
+      cancelled = true;
+    };
+  }, [isResolvingRole, role, t]);
+
   return (
     <section className="panel">
       <h1 className="headline">{t("dashboardTitle")}</h1>
@@ -79,9 +124,7 @@ export function DashboardPage(): JSX.Element {
       {isResolvingRole ? <p>{t("listLoading")}</p> : null}
       <div className="row">
         {!isResolvingRole && role === "admin" ? (
-          <Link className="button secondary" to="/admin/enrollments">
-            {t("adminTabEnrollments")}
-          </Link>
+          null
         ) : !isResolvingRole && role === "parent" ? (
           <>
             <Link className="button secondary" to="/cabinet/parent#schedule">
@@ -109,6 +152,15 @@ export function DashboardPage(): JSX.Element {
           </Link>
         ) : null}
       </div>
+
+      {!isResolvingRole && role === "admin" ? (
+        <DashboardLessonsCalendar
+          lessons={lessons}
+          isLoading={isLessonsLoading}
+          error={lessonsError}
+          t={t}
+        />
+      ) : null}
     </section>
   );
 }

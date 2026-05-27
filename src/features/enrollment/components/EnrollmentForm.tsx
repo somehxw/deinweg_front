@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { Link } from "react-router-dom";
 import { createEnrollmentRequest } from "../../../shared/api/enrollmentApi";
 import { ApiError } from "../../../shared/api/httpClient";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
@@ -19,6 +20,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element {
   const { t } = useI18n();
+  const formId = "enrollment-request-form";
 
   const [step, setStep] = useState<FormStep>("parent");
   const [values, setValues] = useState<EnrollmentFormValues>({
@@ -172,41 +174,37 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
   }
 
   return (
-    <section>
-      <h1 className="headline">{t("pageEnrollmentTitle")}</h1>
-      <p className="subline">{t("pageEnrollmentDescription")}</p>
+    <section className="enrollment-section">
+      <header className="enrollment-hero">
+        <h1 className="headline">{t("pageEnrollmentTitle")}</h1>
+      </header>
 
-      <form className="form-shell" onSubmit={handleSubmit} noValidate>
-        <div className="stepper" aria-label={t("formStepsLabel")}>
-          <div className={`step-chip ${step === "parent" ? "active" : "done"}`}>
-            <span className="step-chip-index">1</span>
-            <span>{t("formStepParentShort")}</span>
+      <div className="enrollment-progress" aria-label={t("formStepsLabel")}>
+        <div className="enrollment-progress-steps">
+          <div className={`progress-step ${step === "parent" ? "active" : "done"}`}>
+            <span className="progress-step-index">1</span>
+            <span className="progress-step-label">{t("formStepParentShort")}</span>
           </div>
-          <div className={`step-chip ${step === "student" ? "active" : ""}`}>
-            <span className="step-chip-index">2</span>
-            <span>{t("formStepStudentShort")}</span>
+          <div className={`progress-step ${step === "student" ? "active" : ""}`}>
+            <span className="progress-step-index">2</span>
+            <span className="progress-step-label">{t("formStepStudentShort")}</span>
           </div>
         </div>
-        <div className="step-progress" aria-hidden="true">
+        <div className="enrollment-progress-line" aria-hidden="true">
           <span style={{ width: step === "parent" ? "50%" : "100%" }} />
         </div>
+      </div>
 
-        <p className="step-title">
-          {step === "parent" ? t("formStepParent") : t("formStepStudent")}
-        </p>
+      <form
+        id={formId}
+        className="form-shell enrollment-shell"
+        onSubmit={handleSubmit}
+        noValidate
+      >
 
         <div className="form-grid">
           {step === "parent" ? (
             <>
-              <EnrollmentFormField
-                id="parentEmail"
-                label={t("formParentEmail")}
-                value={values.parentEmail}
-                onChange={(value) => updateValue("parentEmail", value)}
-                error={errors.parentEmail}
-                type="email"
-              />
-
               <div className="form-row">
                 <EnrollmentFormField
                   id="parentFirstName"
@@ -226,15 +224,24 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
               </div>
 
               <EnrollmentFormField
+                id="parentEmail"
+                label={t("formParentEmail")}
+                value={values.parentEmail}
+                onChange={(value) => updateValue("parentEmail", value)}
+                error={errors.parentEmail}
+                type="email"
+              />
+
+              <EnrollmentFormField
                 id="phone"
                 label={t("formPhone")}
-              value={values.phone}
-              onChange={(value) => updateValue("phone", value)}
-              error={errors.phone}
-              required
-              placeholder="+38 050 123 45 67"
-              inputMode="tel"
-            />
+                value={values.phone}
+                onChange={(value) => updateValue("phone", value)}
+                error={errors.phone}
+                required
+                placeholder="+38 050 123 45 67"
+                inputMode="tel"
+              />
             </>
           ) : (
             <>
@@ -280,27 +287,43 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
 
         {generalError ? <p className="error-text">{generalError}</p> : null}
 
-        <div className="actions">
-          {step === "student" ? (
-            <button
-              type="button"
-              className="button secondary"
-              onClick={goBackToParentStep}
-              disabled={isSubmitting}
-            >
-              {t("formBack")}
-            </button>
-          ) : null}
-
-          <button type="submit" className="button" disabled={isSubmitting}>
-            {isSubmitting
-              ? t("formSubmitting")
-              : step === "parent"
-                ? t("formNext")
-                : t("formSubmit")}
-          </button>
-        </div>
       </form>
+
+      <div className={`actions enrollment-actions ${step === "student" ? "two-buttons" : ""}`}>
+        {step === "student" ? (
+          <button
+            type="button"
+            className="button secondary enrollment-back-button"
+            onClick={goBackToParentStep}
+            disabled={isSubmitting}
+          >
+            <span className="enrollment-back-icon" aria-hidden="true">
+              ←
+            </span>
+            {t("formBack")}
+          </button>
+        ) : null}
+
+        <button
+          type="submit"
+          form={formId}
+          className="button enrollment-submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting
+            ? t("formSubmitting")
+            : step === "parent"
+              ? t("formNext")
+              : t("formSubmit")}
+        </button>
+      </div>
+      {step === "parent" ? (
+        <p className="enrollment-login-hint">
+          <Link to="/login" className="inline-link">
+            {t("enrollmentHasAccount")}
+          </Link>
+        </p>
+      ) : null}
     </section>
   );
 }

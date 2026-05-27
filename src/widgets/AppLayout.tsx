@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { FloatingControls } from "../features/preferences/FloatingControls";
 import { clearAccessToken, hasAccessToken } from "../shared/auth/tokenStorage";
 import { useI18n } from "../shared/i18n/I18nProvider";
+import { AppSidebar } from "./AppSidebar";
 
 export function AppLayout(): JSX.Element {
   const { t } = useI18n();
@@ -33,11 +34,22 @@ export function AppLayout(): JSX.Element {
           </nav>
         </div>
       </header>
-      <main className="section">
-        <div className="container">
-          <Outlet />
-        </div>
-      </main>
+      {isAuthorized ? (
+        <main className="section app-main-auth">
+          <div className="container app-main-grid">
+            <AppSidebar />
+            <div className="app-main-content">
+              <Outlet />
+            </div>
+          </div>
+        </main>
+      ) : (
+        <main className="section">
+          <div className="container">
+            <Outlet />
+          </div>
+        </main>
+      )}
       <FloatingControls />
     </div>
   );

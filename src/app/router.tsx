@@ -14,6 +14,10 @@ import { AdminStudentsPage } from "../pages/admin/AdminStudentsPage";
 import { AdminStudentProfilePage } from "../pages/admin/AdminStudentProfilePage";
 import { AdminParentsPage } from "../pages/admin/AdminParentsPage";
 import { AdminParentProfilePage } from "../pages/admin/AdminParentProfilePage";
+import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
+import { AdminClassesPage } from "../pages/admin/AdminClassesPage";
+import { AdminLessonsPage } from "../pages/admin/AdminLessonsPage";
+import { AdminParentStudentLinksPage } from "../pages/admin/AdminParentStudentLinksPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { RequireAuth } from "./guards/RequireAuth";
 import { RequireRoles } from "./guards/RequireRoles";
@@ -104,8 +108,24 @@ export const router = createBrowserRouter([
                     element: <AdminEnrollmentsPage />
                   },
                   {
+                    path: "classes",
+                    element: <AdminClassesPage />
+                  },
+                  {
+                    path: "lessons",
+                    element: <AdminLessonsPage />
+                  },
+                  {
+                    path: "parent-student-links",
+                    element: <AdminParentStudentLinksPage />
+                  },
+                  {
                     path: "students",
                     element: <AdminStudentsPage />
+                  },
+                  {
+                    path: "users",
+                    element: <AdminUsersPage />
                   },
                   {
                     path: "students/:studentId",
