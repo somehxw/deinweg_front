@@ -1,0 +1,134 @@
+import { Navigate, createBrowserRouter } from "react-router-dom";
+import { AppLayout } from "../widgets/AppLayout";
+import { EnrollmentRequestPage } from "../pages/enrollment/EnrollmentRequestPage";
+import { EnrollmentStatusPage } from "../pages/enrollment/EnrollmentStatusPage";
+import { SetPasswordPage } from "../pages/auth/SetPasswordPage";
+import { LoginPage } from "../pages/auth/LoginPage";
+import { SchedulePage } from "../pages/SchedulePage";
+import { DashboardPage } from "../pages/DashboardPage";
+import { ParentCabinetPage } from "../pages/cabinet/ParentCabinetPage";
+import { ChildCabinetPage } from "../pages/cabinet/ChildCabinetPage";
+import { AdminEnrollmentsPage } from "../pages/admin/AdminEnrollmentsPage";
+import { AdminLayout } from "../pages/admin/AdminLayout";
+import { AdminStudentsPage } from "../pages/admin/AdminStudentsPage";
+import { AdminStudentProfilePage } from "../pages/admin/AdminStudentProfilePage";
+import { AdminParentsPage } from "../pages/admin/AdminParentsPage";
+import { AdminParentProfilePage } from "../pages/admin/AdminParentProfilePage";
+import { NotFoundPage } from "../pages/NotFoundPage";
+import { RequireAuth } from "./guards/RequireAuth";
+import { RequireRoles } from "./guards/RequireRoles";
+import { RedirectIfAuth } from "./guards/RedirectIfAuth";
+import { RoleHomeRedirect } from "./guards/RoleHomeRedirect";
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <AppLayout />,
+    children: [
+      {
+        path: "enrollment-request",
+        element: <EnrollmentRequestPage />
+      },
+      {
+        path: "enrollment-status",
+        element: <EnrollmentStatusPage />
+      },
+      {
+        path: "enrollment-status/:requestId",
+        element: <EnrollmentStatusPage />
+      },
+      {
+        path: "set-password",
+        element: <SetPasswordPage />
+      },
+      {
+        element: <RedirectIfAuth />,
+        children: [
+          {
+            path: "login",
+            element: <LoginPage />
+          }
+        ]
+      },
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            index: true,
+            element: <RoleHomeRedirect />
+          },
+          {
+            path: "home",
+            element: <DashboardPage />
+          },
+          {
+            element: <RequireRoles allowed={["parent"]} />,
+            children: [
+              {
+                path: "cabinet/parent",
+                element: <ParentCabinetPage />
+              }
+            ]
+          },
+          {
+            element: <RequireRoles allowed={["child"]} />,
+            children: [
+              {
+                path: "cabinet/child",
+                element: <ChildCabinetPage />
+              }
+            ]
+          },
+          {
+            element: <RequireRoles allowed={["parent", "child"]} />,
+            children: [
+              {
+                path: "schedule",
+                element: <SchedulePage />
+              }
+            ]
+          },
+          {
+            element: <RequireRoles allowed={["admin"]} />,
+            children: [
+              {
+                path: "admin",
+                element: <AdminLayout />,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="enrollments" replace />
+                  },
+                  {
+                    path: "enrollments",
+                    element: <AdminEnrollmentsPage />
+                  },
+                  {
+                    path: "students",
+                    element: <AdminStudentsPage />
+                  },
+                  {
+                    path: "students/:studentId",
+                    element: <AdminStudentProfilePage />
+                  },
+                  {
+                    path: "parents",
+                    element: <AdminParentsPage />
+                  },
+                  {
+                    path: "parents/:parentId",
+                    element: <AdminParentProfilePage />
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            path: "*",
+            element: <NotFoundPage />
+          }
+        ]
+      }
+    ]
+  }
+]);
