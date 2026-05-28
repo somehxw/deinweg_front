@@ -3,6 +3,11 @@ import { getAccessToken } from "./tokenStorage";
 export type UserRole = "parent" | "child" | "admin" | "unknown";
 
 const RESOLVED_ROLE_KEY = "deinweg_resolved_role";
+const ROLE_CHANGED_EVENT = "deinweg:role-changed";
+
+function emitRoleChanged(): void {
+  window.dispatchEvent(new Event(ROLE_CHANGED_EVENT));
+}
 
 function isTruthyFlag(value: unknown): boolean {
   return value === true || value === 1 || value === "1" || value === "true";
@@ -64,13 +69,16 @@ function readResolvedRole(): UserRole {
 export function setResolvedRole(role: UserRole): void {
   if (role === "admin" || role === "parent" || role === "child") {
     localStorage.setItem(RESOLVED_ROLE_KEY, role);
+    emitRoleChanged();
     return;
   }
   localStorage.removeItem(RESOLVED_ROLE_KEY);
+  emitRoleChanged();
 }
 
 export function clearResolvedRole(): void {
   localStorage.removeItem(RESOLVED_ROLE_KEY);
+  emitRoleChanged();
 }
 
 export function getUserRoleFromToken(): UserRole {

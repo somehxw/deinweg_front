@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { createEnrollmentRequest } from "../../../shared/api/enrollmentApi";
 import { ApiError } from "../../../shared/api/httpClient";
+import { clearAccessToken } from "../../../shared/auth/tokenStorage";
 import { useI18n } from "../../../shared/i18n/I18nProvider";
 import { EnrollmentRequestCreateResponseDto } from "../../../shared/types/enrollment";
 import {
@@ -9,6 +10,7 @@ import {
   EnrollmentFormValues
 } from "../model/enrollmentForm";
 import { EnrollmentFormField } from "./EnrollmentFormField";
+import { EnrollmentSubmitConfirmModal } from "./EnrollmentSubmitConfirmModal";
 
 interface EnrollmentFormProps {
   onSuccess: (response: EnrollmentRequestCreateResponseDto) => void;
@@ -31,11 +33,13 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
     studentFirstName: "",
     studentLastName: "",
     studentBirthDate: "",
-    studentEmail: ""
+    studentEmail: "",
+    consentPersonalData: false
   });
   const [errors, setErrors] = useState<EnrollmentFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   function validateParent(next: EnrollmentFormValues): EnrollmentFormErrors {
     const nextErrors: EnrollmentFormErrors = {};
@@ -90,6 +94,9 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
     if (next.studentEmail.trim() && !EMAIL_PATTERN.test(next.studentEmail.trim())) {
       nextErrors.studentEmail = t("formValidationEmail");
     }
+    if (!next.consentPersonalData) {
+      nextErrors.consentPersonalData = t("formValidationRequired");
+    }
 
     return nextErrors;
   }
@@ -133,6 +140,11 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
       return;
     }
 
+    setIsConfirmModalOpen(true);
+  }
+
+  async function submitEnrollmentRequest(): Promise<void> {
+    setIsConfirmModalOpen(false);
     setIsSubmitting(true);
 
     try {
@@ -281,6 +293,20 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
                 type="email"
                 required={false}
               />
+
+              <label className="enrollment-consent">
+                <input
+                  type="checkbox"
+                  checked={values.consentPersonalData}
+                  onChange={(event) =>
+                    updateValue("consentPersonalData", event.target.checked)
+                  }
+                />
+                <span>{t("enrollmentConsentText")}</span>
+              </label>
+              {errors.consentPersonalData ? (
+                <small className="error-text">{errors.consentPersonalData}</small>
+              ) : null}
             </>
           )}
         </div>
@@ -319,10 +345,28 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
       </div>
       {step === "parent" ? (
         <p className="enrollment-login-hint">
-          <Link to="/login" className="inline-link">
+          <Link
+            to="/login"
+            className="inline-link"
+            onClick={() => {
+              clearAccessToken();
+            }}
+          >
             {t("enrollmentHasAccount")}
           </Link>
         </p>
+      ) : null}
+
+      {isConfirmModalOpen ? (
+        <EnrollmentSubmitConfirmModal
+          title={t("enrollmentConfirmTitle")}
+          description={t("enrollmentConfirmText")}
+          cancelLabel={t("enrollmentConfirmCancel")}
+          confirmLabel={isSubmitting ? t("formSubmitting") : t("enrollmentConfirmSubmit")}
+          isSubmitting={isSubmitting}
+          onCancel={() => setIsConfirmModalOpen(false)}
+          onConfirm={() => void submitEnrollmentRequest()}
+        />
       ) : null}
     </section>
   );
@@ -370,7 +414,8 @@ function extractFieldErrors(error: ApiError): EnrollmentFormErrors {
     ["studentFirstName", "student_first_name"],
     ["studentLastName", "student_last_name"],
     ["studentBirthDate", "student_birth_date"],
-    ["studentEmail", "student_email"]
+    ["studentEmail", "student_email"],
+    ["consentPersonalData", "consent_personal_data"]
   ];
 
   map.forEach(([clientKey, apiKey]) => {

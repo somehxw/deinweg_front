@@ -1,16 +1,20 @@
 import { useMemo, useState } from "react";
 import { localizeWeekDay } from "../../../shared/i18n/backendLabels";
 import { TranslationKey } from "../../../shared/i18n/translations";
-import { AdminLessonDto, WeekDay } from "../../../shared/types/admin";
+import { ParentChildDto, ParentLessonDto } from "../../../shared/types/parent";
 
-interface DashboardLessonsCalendarProps {
-  lessons: AdminLessonDto[];
-  isLoading: boolean;
+interface ParentDashboardLessonsCalendarProps {
+  children: ParentChildDto[];
+  selectedChildId: string | null;
+  onSelectChild: (childId: string) => void;
+  lessons: ParentLessonDto[];
+  isChildrenLoading: boolean;
+  isLessonsLoading: boolean;
   error: string | null;
   t: (key: TranslationKey) => string;
 }
 
-const WEEK_DAYS: WeekDay[] = [
+const WEEK_DAYS = [
   "monday",
   "tuesday",
   "wednesday",
@@ -18,11 +22,13 @@ const WEEK_DAYS: WeekDay[] = [
   "friday",
   "saturday",
   "sunday"
-];
+] as const;
 
-function resolveWeekDay(lesson: AdminLessonDto): WeekDay | null {
-  if (lesson.week_day && WEEK_DAYS.includes(lesson.week_day)) {
-    return lesson.week_day;
+type WeekDay = (typeof WEEK_DAYS)[number];
+
+function resolveWeekDay(lesson: ParentLessonDto): WeekDay | null {
+  if (lesson.week_day && WEEK_DAYS.includes(lesson.week_day as WeekDay)) {
+    return lesson.week_day as WeekDay;
   }
 
   const date = new Date(lesson.starts_at);
@@ -47,7 +53,7 @@ function resolveWeekDay(lesson: AdminLessonDto): WeekDay | null {
 function formatTime(startsAt: string): string {
   const date = new Date(startsAt);
   if (Number.isNaN(date.getTime())) {
-    return "—";
+    return "-";
   }
 
   return new Intl.DateTimeFormat("uk-UA", {
@@ -56,56 +62,35 @@ function formatTime(startsAt: string): string {
   }).format(date);
 }
 
-function isCancelledLesson(status: AdminLessonDto["status"]): boolean {
-  return status === "cancelled";
+function isCancelledLesson(status?: string): boolean {
+  const normalized = status?.trim().toLowerCase();
+  return normalized === "cancelled" || normalized === "canceled";
 }
 
-export function DashboardLessonsCalendar({
+export function ParentDashboardLessonsCalendar({
+  children,
+  selectedChildId,
+  onSelectChild,
   lessons,
-  isLoading,
+  isChildrenLoading,
+  isLessonsLoading,
   error,
   t
-}: DashboardLessonsCalendarProps): JSX.Element {
-  const [selectedClass, setSelectedClass] = useState<string>("all");
+}: ParentDashboardLessonsCalendarProps): JSX.Element {
   const [dayScope, setDayScope] = useState<"all" | "saturday">("all");
-
-  const classOptions = useMemo(() => {
-    const unique = new Set<string>();
-    for (const lesson of lessons) {
-      if (lesson.class_name) {
-        unique.add(lesson.class_name);
-      }
-    }
-    return Array.from(unique).sort((a, b) => a.localeCompare(b));
-  }, [lessons]);
-
-  const filteredLessons = useMemo(() => {
-    return lessons.filter((lesson) => {
-      if (isCancelledLesson(lesson.status)) {
-        return false;
-      }
-      if (dayScope === "saturday" && resolveWeekDay(lesson) !== "saturday") {
-        return false;
-      }
-      if (selectedClass !== "all" && lesson.class_name !== selectedClass) {
-        return false;
-      }
-      return true;
-    });
-  }, [dayScope, lessons, selectedClass]);
-
-  const visibleDays = useMemo<WeekDay[]>(
-    () => (dayScope === "saturday" ? ["saturday"] : WEEK_DAYS),
-    [dayScope]
-  );
-
   const grouped = useMemo(() => {
-    const bucket = new Map<WeekDay, AdminLessonDto[]>();
+    const bucket = new Map<WeekDay, ParentLessonDto[]>();
     for (const day of WEEK_DAYS) {
       bucket.set(day, []);
     }
 
-    for (const lesson of filteredLessons) {
+    for (const lesson of lessons) {
+      if (isCancelledLesson(lesson.status)) {
+        continue;
+      }
+      if (dayScope === "saturday" && resolveWeekDay(lesson) !== "saturday") {
+        continue;
+      }
       const day = resolveWeekDay(lesson);
       if (!day) {
         continue;
@@ -115,14 +100,17 @@ export function DashboardLessonsCalendar({
 
     for (const day of WEEK_DAYS) {
       const items = bucket.get(day) ?? [];
-      items.sort((a, b) => {
-        return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
-      });
+      items.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
       bucket.set(day, items);
     }
 
     return bucket;
-  }, [filteredLessons]);
+  }, [dayScope, lessons]);
+
+  const visibleDays = useMemo<WeekDay[]>(
+    () => (dayScope === "saturday" ? ["saturday"] : WEEK_DAYS),
+    [dayScope]
+  );
 
   return (
     <section className="dashboard-calendar panel">
@@ -131,18 +119,26 @@ export function DashboardLessonsCalendar({
         <p className="subline dashboard-calendar-subline">{t("dashboardLessonsCalendarDescription")}</p>
       </div>
 
-      <div className="dashboard-calendar-filters form-row">
-        <label className="field">
-          <span>{t("tableClass")}</span>
-          <select value={selectedClass} onChange={(event) => setSelectedClass(event.target.value)}>
-            <option value="all">{t("filterAll")}</option>
-            {classOptions.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
+      {children.length > 1 ? (
+        <div className="child-selector parent-child-selector dashboard-child-selector">
+          {children.map((child) => {
+            const fullName = `${child.first_name ?? ""} ${child.last_name ?? ""}`.trim();
+            const isActive = child.id === selectedChildId;
+            return (
+              <button
+                key={child.id}
+                type="button"
+                className={`chip-button${isActive ? " active" : ""}`}
+                onClick={() => onSelectChild(child.id)}
+              >
+                {fullName || child.email || child.id}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div className="dashboard-calendar-filters">
         <label className="field">
           <span>{t("calendarDayScopeLabel")}</span>
           <select
@@ -155,10 +151,11 @@ export function DashboardLessonsCalendar({
         </label>
       </div>
 
-      {isLoading ? <p>{t("listLoading")}</p> : null}
+      {isChildrenLoading || isLessonsLoading ? <p>{t("listLoading")}</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
+      {!isChildrenLoading && children.length === 0 ? <p>{t("childrenListEmpty")}</p> : null}
 
-      {!isLoading && !error ? (
+      {!isChildrenLoading && !isLessonsLoading && !error && selectedChildId ? (
         <div className={`dashboard-calendar-grid${dayScope === "saturday" ? " saturday-only" : ""}`}>
           {visibleDays.map((day) => {
             const dayLessons = grouped.get(day) ?? [];
@@ -174,7 +171,7 @@ export function DashboardLessonsCalendar({
                         <span className="dashboard-lesson-time">{formatTime(lesson.starts_at)}</span>
                         <span className="dashboard-lesson-topic">{lesson.topic || t("tableLessonSubject")}</span>
                         <span className="dashboard-lesson-meta">
-                          {lesson.class_name}
+                          {lesson.class_name ?? "-"}
                           {lesson.room ? ` · ${lesson.room}` : ""}
                         </span>
                       </li>
