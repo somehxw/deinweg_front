@@ -1,6 +1,10 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
+# URL бэкенда для Vite на этапе сборки (можно переопределить через --build-arg)
+ARG VITE_API_BASE_URL=https://deinweg-api.i-lab.ink/
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
 # Установка зависимостей
 COPY package*.json ./
 RUN npm install
