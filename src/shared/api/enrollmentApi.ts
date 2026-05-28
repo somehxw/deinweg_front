@@ -19,10 +19,12 @@ export function createEnrollmentRequest(
 }
 
 export function getEnrollmentRequestStatus(
-  requestId: string
+  requestId: string,
+  token?: string
 ): Promise<EnrollmentRequestStatusResponseDto> {
+  const query = token ? `?token=${encodeURIComponent(token)}` : "";
   return httpRequest<Record<string, unknown>>(
-    `/api/v1/enrollment-requests/status/${requestId}/`,
+    `/api/v1/enrollment-requests/status/${requestId}/${query}`,
     { method: "GET" }
   ).then((response) => mapStatusResponse(response, requestId));
 }

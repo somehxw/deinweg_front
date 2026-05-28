@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { FloatingControls } from "../features/preferences/FloatingControls";
 import { clearAccessToken, hasAccessToken } from "../shared/auth/tokenStorage";
 import { useI18n } from "../shared/i18n/I18nProvider";
@@ -23,9 +23,6 @@ export function AppLayout(): JSX.Element {
             <span>{t("appTitle")}</span>
           </Link>
           <nav className="nav">
-            <NavLink to="/enrollment-request">
-              {t("navEnrollmentForm")}
-            </NavLink>
             {isAuthorized ? (
               <button type="button" className="topbar-logout" onClick={handleLogout}>
                 {t("logout")}
