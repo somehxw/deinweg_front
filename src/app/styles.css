@@ -1410,7 +1410,16 @@ a {
   border-radius: 12px;
   padding: 12px;
   background: var(--card-bg);
-  min-height: 150px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.dashboard-day-card.drag-target {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--hairline));
+  box-shadow: color-mix(in srgb, var(--primary) 20%, transparent) 0 0 0 3px inset;
+  background: color-mix(in srgb, var(--primary) 6%, var(--card-bg));
 }
 
 .dashboard-day-title {
@@ -1432,6 +1441,8 @@ a {
   list-style: none;
   display: grid;
   gap: 6px;
+  align-content: start;
+  flex: 1 1 auto;
 }
 
 .dashboard-lesson-item {
@@ -1441,12 +1452,87 @@ a {
   display: grid;
   gap: 2px;
   background: var(--surface-soft);
+  position: relative;
+  cursor: grab;
+}
+
+.dashboard-lesson-item.dragging {
+  opacity: 0.55;
 }
 
 .dashboard-lesson-time {
   font-size: 12px;
   font-weight: 700;
   color: var(--lesson-time);
+}
+
+.dashboard-lesson-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+}
+
+.dashboard-lesson-menu-trigger {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--slate);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dashboard-lesson-menu-trigger:hover {
+  color: var(--charcoal);
+}
+
+.dashboard-lesson-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 12;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: rgba(0, 0, 0, 0.2) 0 8px 18px -8px;
+  min-width: 130px;
+  padding: 6px;
+}
+
+.dashboard-lesson-menu-item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--charcoal);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-lesson-menu-item:hover {
+  background: var(--surface-soft);
+}
+
+.dashboard-lesson-menu-item.danger {
+  color: var(--error);
+}
+
+.dashboard-lesson-menu-item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.dashboard-lesson-item:active {
+  cursor: grabbing;
 }
 
 .dashboard-lesson-topic {
