@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
+import { FiPlus } from "react-icons/fi";
 import { localizeWeekDay } from "../../../shared/i18n/backendLabels";
 import { TranslationKey } from "../../../shared/i18n/translations";
 import { AdminLessonDto, WeekDay } from "../../../shared/types/admin";
+import { AdminLessonCreateModal } from "../../admin/components/AdminLessonCreateModal";
 
 interface DashboardLessonsCalendarProps {
   lessons: AdminLessonDto[];
   isLoading: boolean;
   error: string | null;
   t: (key: TranslationKey) => string;
+  onLessonsChanged: () => void | Promise<void>;
 }
 
 const WEEK_DAYS: WeekDay[] = [
@@ -64,10 +67,12 @@ export function DashboardLessonsCalendar({
   lessons,
   isLoading,
   error,
-  t
+  t,
+  onLessonsChanged
 }: DashboardLessonsCalendarProps): JSX.Element {
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [dayScope, setDayScope] = useState<"all" | "saturday">("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const classOptions = useMemo(() => {
     const unique = new Set<string>();
@@ -126,10 +131,26 @@ export function DashboardLessonsCalendar({
 
   return (
     <section className="dashboard-calendar panel">
-      <div className="dashboard-calendar-header">
-        <h2 className="section-heading">{t("dashboardLessonsCalendarTitle")}</h2>
-        <p className="subline dashboard-calendar-subline">{t("dashboardLessonsCalendarDescription")}</p>
+      <div className="dashboard-calendar-header dashboard-calendar-header-row">
+        <div>
+          <h2 className="section-heading">{t("dashboardLessonsCalendarTitle")}</h2>
+          <p className="subline dashboard-calendar-subline">{t("dashboardLessonsCalendarDescription")}</p>
+        </div>
+        <button
+          type="button"
+          className="button secondary dashboard-calendar-add-button"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          <FiPlus aria-hidden="true" />
+          <span>{t("addLessonAction")}</span>
+        </button>
       </div>
+
+      <AdminLessonCreateModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreated={onLessonsChanged}
+      />
 
       <div className="dashboard-calendar-filters form-row">
         <label className="field">

@@ -1347,9 +1347,26 @@ a {
   margin-bottom: 10px;
 }
 
+.dashboard-calendar-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .dashboard-calendar-subline {
   margin-top: 6px;
   font-size: 15px;
+}
+
+.dashboard-calendar-add-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .dashboard-calendar-grid {
@@ -1451,6 +1468,16 @@ a {
 }
 
 @media (max-width: 860px) {
+  .dashboard-calendar-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-calendar-add-button {
+    width: 100%;
+    justify-content: center;
+  }
+
   .dashboard-calendar-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
