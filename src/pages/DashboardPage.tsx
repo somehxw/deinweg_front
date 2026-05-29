@@ -182,7 +182,7 @@ export function DashboardPage(): JSX.Element {
       setIsParentLessonsLoading(true);
       setParentLessonsError(null);
       try {
-        const response = await getParentLessons({ studentId: selectedChildId });
+        const response = await getParentLessons({ studentId: selectedChildId ?? undefined });
         if (!cancelled) {
           setParentLessons(response);
         }

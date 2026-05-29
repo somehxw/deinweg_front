@@ -548,7 +548,7 @@ export function DashboardLessonsCalendar({
       ) : null}
 
       {!isLoading && !error && dayScope !== "saturday" ? (
-        <div className={`dashboard-calendar-grid${dayScope === "saturday" ? " saturday-only" : ""}`}>
+        <div className="dashboard-calendar-grid">
           {visibleDays.map((day) => {
             const dayLessons = grouped.get(day) ?? [];
             return (

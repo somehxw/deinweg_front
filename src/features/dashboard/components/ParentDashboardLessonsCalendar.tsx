@@ -108,7 +108,7 @@ export function ParentDashboardLessonsCalendar({
   }, [dayScope, lessons]);
 
   const visibleDays = useMemo<WeekDay[]>(
-    () => (dayScope === "saturday" ? ["saturday"] : WEEK_DAYS),
+    () => (dayScope === "saturday" ? ["saturday"] : [...WEEK_DAYS]),
     [dayScope]
   );
 
