@@ -15,6 +15,7 @@ export function LoginPage(): JSX.Element {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const formId = "login-form";
 
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -61,7 +62,7 @@ export function LoginPage(): JSX.Element {
         <p className="subline">{t("loginDescription")}</p>
       </header>
 
-      <form className="form-shell login-shell" onSubmit={onSubmit} noValidate>
+      <form id={formId} className="form-shell login-shell" onSubmit={onSubmit} noValidate>
         <div className="login-success-stack">
           {isRegistered ? <p className="success-text">{t("loginRegisteredSuccess")}</p> : null}
           {isPasswordSet ? <p className="success-text">{t("loginPasswordSetSuccess")}</p> : null}
@@ -88,13 +89,18 @@ export function LoginPage(): JSX.Element {
         </div>
 
         {error ? <p className="error-text">{error}</p> : null}
-
-        <div className="actions">
-          <button type="submit" className="button" disabled={isSubmitting}>
-            {isSubmitting ? t("formSubmitting") : t("loginSubmit")}
-          </button>
-        </div>
       </form>
+
+      <div className="login-actions">
+        <button
+          type="submit"
+          form={formId}
+          className="button login-submit-button"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? t("formSubmitting") : t("loginSubmit")}
+        </button>
+      </div>
 
       <p className="login-enrollment-hint">
         {t("loginNoAccount")}{" "}

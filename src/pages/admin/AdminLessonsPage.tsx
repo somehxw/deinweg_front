@@ -12,6 +12,21 @@ import { AdminLessonDto } from "../../shared/types/admin";
 import { localizeLessonStatus, localizeWeekDay } from "../../shared/i18n/backendLabels";
 import { AdminLessonCreateModal } from "../../features/admin/components/AdminLessonCreateModal";
 
+function formatLocalDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("uk-UA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 export function AdminLessonsPage(): JSX.Element {
   const { t } = useI18n();
   const [items, setItems] = useState<AdminLessonDto[]>([]);
@@ -127,7 +142,7 @@ export function AdminLessonsPage(): JSX.Element {
                 <tr key={item.id}>
                   <td>{item.class_name}</td>
                   <td>{localizeWeekDay(item.week_day, t)}</td>
-                  <td>{item.starts_at}</td>
+                  <td>{formatLocalDateTime(item.starts_at)}</td>
                   <td>{item.duration_minutes}</td>
                   <td>{item.topic ?? "-"}</td>
                   <td>{localizeLessonStatus(item.status, t)}</td>

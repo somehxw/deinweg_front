@@ -25,6 +25,17 @@ const WEEK_DAYS: WeekDay[] = [
   "sunday"
 ];
 
+const SATURDAY_START_HOUR = 8;
+const SATURDAY_END_HOUR = 16;
+const SATURDAY_SLOT_STEP_MINUTES = 15;
+const SATURDAY_SLOTS = Array.from(
+  {
+    length:
+      ((SATURDAY_END_HOUR - SATURDAY_START_HOUR) * 60) / SATURDAY_SLOT_STEP_MINUTES + 1
+  },
+  (_, index) => SATURDAY_START_HOUR * 60 + index * SATURDAY_SLOT_STEP_MINUTES
+);
+
 const WEEK_DAY_TO_UTC_INDEX: Record<WeekDay, number> = {
   sunday: 0,
   monday: 1,
@@ -88,12 +99,84 @@ function getRescheduledStartsAt(startsAt: string, targetDay: WeekDay): string | 
   return shifted.toISOString();
 }
 
+function getRescheduledStartsAtForSlot(startsAt: string, targetSlotMinutes: number): string | null {
+  const source = new Date(startsAt);
+  if (Number.isNaN(source.getTime())) {
+    return null;
+  }
+  const shifted = new Date(source);
+  shifted.setHours(Math.floor(targetSlotMinutes / 60), targetSlotMinutes % 60, 0, 0);
+  return shifted.toISOString();
+}
+
+function getSlotBucket(startsAt: string): number | null {
+  const date = new Date(startsAt);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  const totalMinutes = date.getHours() * 60 + date.getMinutes();
+  const startMinutes = SATURDAY_START_HOUR * 60;
+  const endMinutes = SATURDAY_END_HOUR * 60;
+  if (totalMinutes < startMinutes || totalMinutes > endMinutes) {
+    return null;
+  }
+  const snapped =
+    Math.floor((totalMinutes - startMinutes) / SATURDAY_SLOT_STEP_MINUTES) * SATURDAY_SLOT_STEP_MINUTES
+    + startMinutes;
+  return snapped;
+}
+
+function formatSlotLabel(slotMinutes: number): string {
+  const hour = Math.floor(slotMinutes / 60);
+  const minute = slotMinutes % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
 function getTeacherDisplay(lesson: AdminLessonDto): string | null {
   if (lesson.teacher_info) {
     const fullName = `${lesson.teacher_info.first_name} ${lesson.teacher_info.last_name}`.trim();
     return fullName || lesson.teacher_info.user_email || null;
   }
   return lesson.teacher ?? null;
+}
+
+function getUniqueStartsAtForLessonSlot(
+  desiredIso: string,
+  allLessons: AdminLessonDto[],
+  lessonId: string
+): string {
+  const desired = new Date(desiredIso);
+  if (Number.isNaN(desired.getTime())) {
+    return desiredIso;
+  }
+
+  const occupied = new Set<number>();
+  for (const lesson of allLessons) {
+    if (lesson.id === lessonId) {
+      continue;
+    }
+    const moment = new Date(lesson.starts_at);
+    if (Number.isNaN(moment.getTime())) {
+      continue;
+    }
+    occupied.add(moment.getTime());
+  }
+
+  const base = new Date(desired);
+  base.setSeconds(0, 0);
+  if (!occupied.has(base.getTime())) {
+    return base.toISOString();
+  }
+
+  for (let second = 1; second < 60; second += 1) {
+    const candidate = new Date(base);
+    candidate.setSeconds(second, 0);
+    if (!occupied.has(candidate.getTime())) {
+      return candidate.toISOString();
+    }
+  }
+
+  return base.toISOString();
 }
 
 export function DashboardLessonsCalendar({
@@ -104,13 +187,14 @@ export function DashboardLessonsCalendar({
   onLessonsChanged
 }: DashboardLessonsCalendarProps): JSX.Element {
   const [selectedClass, setSelectedClass] = useState<string>("all");
-  const [dayScope, setDayScope] = useState<"all" | "saturday">("all");
+  const [dayScope, setDayScope] = useState<"all" | "saturday">("saturday");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [actionLessonId, setActionLessonId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [menuLessonId, setMenuLessonId] = useState<string | null>(null);
   const [draggedLessonId, setDraggedLessonId] = useState<string | null>(null);
   const [dropTargetDay, setDropTargetDay] = useState<WeekDay | null>(null);
+  const [dropTargetHour, setDropTargetHour] = useState<number | null>(null);
 
   const classOptions = useMemo(() => {
     const unique = new Set<string>();
@@ -173,17 +257,44 @@ export function DashboardLessonsCalendar({
     return map;
   }, [lessons]);
 
+  const saturdayHourBuckets = useMemo(() => {
+    const bucket = new Map<number, AdminLessonDto[]>();
+    for (const slot of SATURDAY_SLOTS) {
+      bucket.set(slot, []);
+    }
+
+    for (const lesson of filteredLessons) {
+      if (resolveWeekDay(lesson) !== "saturday") {
+        continue;
+      }
+      const slot = getSlotBucket(lesson.starts_at);
+      if (slot === null || !bucket.has(slot)) {
+        continue;
+      }
+      bucket.get(slot)?.push(lesson);
+    }
+
+    for (const slot of SATURDAY_SLOTS) {
+      const items = bucket.get(slot) ?? [];
+      items.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+      bucket.set(slot, items);
+    }
+
+    return bucket;
+  }, [filteredLessons]);
+
   async function moveLessonToDay(lesson: AdminLessonDto, targetDay: WeekDay): Promise<void> {
     const currentDay = resolveWeekDay(lesson);
     if (!currentDay || currentDay === targetDay) {
       return;
     }
 
-    const nextStartsAt = getRescheduledStartsAt(lesson.starts_at, targetDay);
-    if (!nextStartsAt) {
+    const rawStartsAt = getRescheduledStartsAt(lesson.starts_at, targetDay);
+    if (!rawStartsAt) {
       setActionError(t("generalError"));
       return;
     }
+    const nextStartsAt = getUniqueStartsAtForLessonSlot(rawStartsAt, lessons, lesson.id);
 
     setActionLessonId(lesson.id);
     setActionError(null);
@@ -237,6 +348,52 @@ export function DashboardLessonsCalendar({
     await moveLessonToDay(lesson, targetDay);
   }
 
+  async function moveLessonToSaturdaySlot(
+    lesson: AdminLessonDto,
+    targetSlotMinutes: number
+  ): Promise<void> {
+    const rawStartsAt = getRescheduledStartsAtForSlot(lesson.starts_at, targetSlotMinutes);
+    if (!rawStartsAt) {
+      setActionError(t("generalError"));
+      return;
+    }
+    const nextStartsAt = getUniqueStartsAtForLessonSlot(rawStartsAt, lessons, lesson.id);
+
+    setActionLessonId(lesson.id);
+    setActionError(null);
+    setMenuLessonId(null);
+    try {
+      await updateAdminLesson(lesson.id, {
+        starts_at: nextStartsAt,
+        week_day: "saturday",
+        status: "planned"
+      });
+      await onLessonsChanged();
+    } catch (actionLoadError) {
+      if (actionLoadError instanceof ApiError) {
+        setActionError(`${t("generalError")} (${actionLoadError.status})`);
+      } else {
+        setActionError(t("generalError"));
+      }
+    } finally {
+      setActionLessonId(null);
+    }
+  }
+
+  async function onDropToSaturdaySlot(targetSlotMinutes: number): Promise<void> {
+    if (!draggedLessonId) {
+      return;
+    }
+
+    const lesson = lessonById.get(draggedLessonId);
+    setDropTargetHour(null);
+    setDraggedLessonId(null);
+    if (!lesson) {
+      return;
+    }
+    await moveLessonToSaturdaySlot(lesson, targetSlotMinutes);
+  }
+
   return (
     <section className="dashboard-calendar panel">
       <div className="dashboard-calendar-header dashboard-calendar-header-row">
@@ -278,8 +435,8 @@ export function DashboardLessonsCalendar({
             value={dayScope}
             onChange={(event) => setDayScope(event.target.value as "all" | "saturday")}
           >
-            <option value="all">{t("calendarDayScopeAll")}</option>
             <option value="saturday">{t("calendarDayScopeSaturday")}</option>
+            <option value="all">{t("calendarDayScopeAll")}</option>
           </select>
         </label>
       </div>
@@ -288,7 +445,109 @@ export function DashboardLessonsCalendar({
       {error ? <p className="error-text">{error}</p> : null}
       {actionError ? <p className="error-text">{actionError}</p> : null}
 
-      {!isLoading && !error ? (
+      {!isLoading && !error && dayScope === "saturday" ? (
+        <div className="dashboard-saturday-timeline">
+          {SATURDAY_SLOTS.map((slot) => {
+            const slotLessons = saturdayHourBuckets.get(slot) ?? [];
+            return (
+              <article
+                key={slot}
+                className={`dashboard-timeline-row${dropTargetHour === slot ? " drag-target" : ""}`}
+                onDragOver={(event) => {
+                  if (!draggedLessonId) return;
+                  event.preventDefault();
+                  if (dropTargetHour !== slot) {
+                    setDropTargetHour(slot);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dropTargetHour === slot) {
+                    setDropTargetHour(null);
+                  }
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  void onDropToSaturdaySlot(slot);
+                }}
+              >
+                <div className="dashboard-timeline-hour">{formatSlotLabel(slot)}</div>
+                <div className="dashboard-timeline-lane">
+                  {slotLessons.length === 0 ? (
+                    <span className="dashboard-timeline-empty"> </span>
+                  ) : (
+                    <div
+                      className="dashboard-timeline-cards"
+                      style={{
+                        gridTemplateColumns: `repeat(${Math.max(slotLessons.length, 1)}, minmax(0, 1fr))`
+                      }}
+                    >
+                      {slotLessons.map((lesson) => {
+                        const teacher = getTeacherDisplay(lesson);
+                        return (
+                          <div
+                            key={lesson.id}
+                            className={`dashboard-lesson-item${draggedLessonId === lesson.id ? " dragging" : ""}`}
+                            draggable={actionLessonId !== lesson.id}
+                            onDragStart={(event) => {
+                              event.dataTransfer.effectAllowed = "move";
+                              event.dataTransfer.setData("text/plain", lesson.id);
+                              setDraggedLessonId(lesson.id);
+                              setMenuLessonId(null);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedLessonId(null);
+                              setDropTargetHour(null);
+                            }}
+                          >
+                            <div className="dashboard-lesson-top">
+                              <span className="dashboard-lesson-time">{formatTime(lesson.starts_at)}</span>
+                              <button
+                                type="button"
+                                className="dashboard-lesson-menu-trigger"
+                                aria-label={t("tableActions")}
+                                onClick={() => {
+                                  setMenuLessonId((prev) => (prev === lesson.id ? null : lesson.id));
+                                }}
+                                disabled={actionLessonId === lesson.id}
+                              >
+                                <FiMoreHorizontal aria-hidden="true" />
+                              </button>
+                              {menuLessonId === lesson.id ? (
+                                <div className="dashboard-lesson-menu">
+                                  <button
+                                    type="button"
+                                    className="dashboard-lesson-menu-item danger"
+                                    onClick={() => void onCancelLesson(lesson.id)}
+                                    disabled={actionLessonId === lesson.id}
+                                  >
+                                    {t("cancelAction")}
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                            <span className="dashboard-lesson-topic">{lesson.topic || t("tableLessonSubject")}</span>
+                            <span className="dashboard-lesson-meta">
+                              {lesson.class_name}
+                              {lesson.room ? ` · ${lesson.room}` : ""}
+                            </span>
+                            {teacher ? (
+                              <span className="dashboard-lesson-meta">
+                                {t("tableTeacher")}: {teacher}
+                              </span>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {!isLoading && !error && dayScope !== "saturday" ? (
         <div className={`dashboard-calendar-grid${dayScope === "saturday" ? " saturday-only" : ""}`}>
           {visibleDays.map((day) => {
             const dayLessons = grouped.get(day) ?? [];

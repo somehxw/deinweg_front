@@ -28,14 +28,21 @@ export function EnrollmentFormField({
       <span>{label}</span>
       <input
         id={id}
+        className={error ? "field-input-error" : undefined}
         type={type}
         value={value}
         required={required}
         placeholder={placeholder}
         inputMode={inputMode}
+        aria-invalid={error ? "true" : "false"}
         onChange={(event) => onChange(event.target.value)}
       />
-      {error ? <small className="error-text">{error}</small> : null}
+      <small
+        className={`error-text field-error-text${error ? "" : " is-empty"}`}
+        aria-hidden={error ? "false" : "true"}
+      >
+        {error ?? "\u00A0"}
+      </small>
     </label>
   );
 }

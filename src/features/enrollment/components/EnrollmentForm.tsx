@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+﻿import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { createEnrollmentRequest } from "../../../shared/api/enrollmentApi";
 import { ApiError } from "../../../shared/api/httpClient";
@@ -9,6 +9,7 @@ import {
   EnrollmentFormErrors,
   EnrollmentFormValues
 } from "../model/enrollmentForm";
+import { enrollmentValidationTexts } from "../model/enrollmentValidationTexts";
 import { EnrollmentFormField } from "./EnrollmentFormField";
 import { EnrollmentSubmitConfirmModal } from "./EnrollmentSubmitConfirmModal";
 
@@ -19,9 +20,10 @@ interface EnrollmentFormProps {
 type FormStep = "parent" | "student";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_DIGITS_REQUIRED = 12;
 
 export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const formId = "enrollment-request-form";
 
   const [step, setStep] = useState<FormStep>("parent");
@@ -64,6 +66,8 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
 
     if (!next.phone.trim()) {
       nextErrors.phone = t("formValidationRequired");
+    } else if (countPhoneDigits(next.phone) !== PHONE_DIGITS_REQUIRED) {
+      nextErrors.phone = enrollmentValidationTexts[locale].invalidPhone;
     }
 
     return nextErrors;
@@ -319,13 +323,10 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
         {step === "student" ? (
           <button
             type="button"
-            className="button secondary enrollment-back-button"
+            className="button enrollment-submit enrollment-back-button"
             onClick={goBackToParentStep}
             disabled={isSubmitting}
           >
-            <span className="enrollment-back-icon" aria-hidden="true">
-              ←
-            </span>
             {t("formBack")}
           </button>
         ) : null}
@@ -374,6 +375,10 @@ export function EnrollmentForm({ onSuccess }: EnrollmentFormProps): JSX.Element 
 
 function normalizePhone(value: string): string {
   return value.replace(/[^\d+]/g, "");
+}
+
+function countPhoneDigits(value: string): number {
+  return value.replace(/\D/g, "").length;
 }
 
 function applyPhoneMask(value: string): string {
@@ -431,3 +436,4 @@ function extractFieldErrors(error: ApiError): EnrollmentFormErrors {
 
   return mapped;
 }
+
