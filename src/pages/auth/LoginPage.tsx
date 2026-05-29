@@ -56,8 +56,10 @@ export function LoginPage(): JSX.Element {
 
   return (
     <section>
-      <h1 className="headline">{t("loginTitle")}</h1>
-      <p className="subline">{t("loginDescription")}</p>
+      <header className="enrollment-hero login-hero">
+        <h1 className="headline">{t("loginTitle")}</h1>
+        <p className="subline">{t("loginDescription")}</p>
+      </header>
 
       <form className="form-shell login-shell" onSubmit={onSubmit} noValidate>
         <div className="login-success-stack">
@@ -92,16 +94,14 @@ export function LoginPage(): JSX.Element {
             {isSubmitting ? t("formSubmitting") : t("loginSubmit")}
           </button>
         </div>
-
-        <div className="login-helper">
-          <p className="login-helper-text">
-            {t("loginNoAccount")}{" "}
-            <Link className="inline-link" to="/enrollment-request">
-              {t("loginGoToEnrollment")}
-            </Link>
-          </p>
-        </div>
       </form>
+
+      <p className="login-enrollment-hint">
+        {t("loginNoAccount")}{" "}
+        <Link className="inline-link" to="/enrollment-request">
+          {t("loginGoToEnrollment")}
+        </Link>
+      </p>
     </section>
   );
 }

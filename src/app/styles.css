@@ -13,6 +13,7 @@
   --card-bg: #ffffff;
   --error: #e03131;
   --success: #1aae39;
+  --lesson-time: #2b1468;
   color-scheme: light;
 }
 
@@ -27,6 +28,7 @@
   --slate: #b4bfd0;
   --topbar-bg: rgba(16, 22, 31, 0.92);
   --card-bg: #1a2330;
+  --lesson-time: #b9a4ff;
   color-scheme: dark;
 }
 
@@ -131,6 +133,18 @@ a {
   border-color: var(--ink);
 }
 
+.nav a.topbar-enrollment-login {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
+:root[data-theme="dark"] .nav a.topbar-enrollment-login {
+  background: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+}
+
 .controls {
   margin-left: auto;
   display: inline-flex;
@@ -147,23 +161,26 @@ a {
 }
 
 .app-main-auth .container {
-  width: min(100% - 32px, 1760px);
+  width: min(100% - 48px, 1100px);
 }
 
 .app-main-grid {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 18px;
+  display: flex;
   align-items: start;
 }
 
 .app-main-content {
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .app-sidebar {
   position: sticky;
   top: 86px;
+  flex: 0 0 260px;
+  width: 260px;
+  margin-left: -278px;
+  margin-right: 18px;
   border: 1px solid color-mix(in srgb, var(--hairline) 75%, transparent);
   border-radius: 18px;
   background: var(--canvas);
@@ -555,10 +572,19 @@ a {
 }
 
 .login-shell {
-  max-width: 560px;
+  max-width: 780px;
   margin-inline: auto;
   display: grid;
   gap: 18px;
+}
+
+.login-hero {
+  max-width: 780px;
+  margin-inline: auto;
+  margin-bottom: 10px;
+  display: grid;
+  gap: 0;
+  justify-items: start;
 }
 
 .login-success-stack {
@@ -567,20 +593,12 @@ a {
   min-height: 0;
 }
 
-.login-helper {
-  margin-top: 4px;
-  border-top: 1px solid var(--hairline);
-  padding-top: 16px;
-}
-
-.login-helper-text {
-  margin: 0;
+.login-enrollment-hint {
+  max-width: 780px;
+  margin: 10px auto 0;
+  text-align: center;
   font-size: 14px;
   color: var(--slate);
-}
-
-.login-helper .button {
-  width: fit-content;
 }
 
 .enrollment-section .headline {
@@ -712,6 +730,22 @@ a {
 
 .enrollment-shell .field input::placeholder {
   color: color-mix(in srgb, var(--slate) 70%, transparent);
+}
+
+.enrollment-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--charcoal);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.enrollment-consent input[type="checkbox"] {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
 }
 
 .enrollment-actions {
@@ -1104,7 +1138,7 @@ a {
 
 .floating-panel {
   position: absolute;
-  right: 0;
+  right: 10px;
   bottom: 64px;
   display: none;
   justify-items: end;
@@ -1152,6 +1186,60 @@ a {
   padding: 22px;
 }
 
+.submitted-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.submitted-title {
+  margin: 0;
+}
+
+.submitted-check-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--success);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  box-shadow: color-mix(in srgb, var(--success) 45%, transparent) 0 0 0 0;
+  animation: submitted-check-pop 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    submitted-check-pulse 1.8s ease-in-out 520ms infinite;
+}
+
+.submitted-check-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes submitted-check-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes submitted-check-pulse {
+  0%,
+  100% {
+    box-shadow: color-mix(in srgb, var(--success) 45%, transparent) 0 0 0 0;
+  }
+  50% {
+    box-shadow: color-mix(in srgb, var(--success) 18%, transparent) 0 0 0 10px;
+  }
+}
+
 @media (max-width: 860px) {
   .container {
     width: min(100% - 28px, 1100px);
@@ -1175,16 +1263,20 @@ a {
   }
 
   .app-main-auth .container {
-    width: min(100% - 20px, 1760px);
+    width: min(100% - 28px, 1100px);
   }
 
   .app-main-grid {
+    display: grid;
     grid-template-columns: 1fr;
     gap: 14px;
   }
 
   .app-sidebar {
     position: static;
+    width: auto;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .sidebar-nav {
@@ -1289,9 +1381,33 @@ a {
   margin-top: 8px;
 }
 
+.dashboard-calendar-grid.saturday-only {
+  grid-template-columns: 1fr;
+}
+
+.dashboard-calendar-grid.saturday-only .dashboard-day-card {
+  margin-top: 4px;
+}
+
 .dashboard-calendar-filters {
   margin-top: 12px;
   margin-bottom: 4px;
+}
+
+.dashboard-calendar-filters.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 260px));
+  justify-content: start;
+  align-items: start;
+  gap: 20px;
+}
+
+.dashboard-calendar-filters.form-row .field {
+  min-width: 0;
+}
+
+.dashboard-child-selector {
+  margin-bottom: 12px;
 }
 
 .dashboard-day-card {
@@ -1335,7 +1451,7 @@ a {
 .dashboard-lesson-time {
   font-size: 12px;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--lesson-time);
 }
 
 .dashboard-lesson-topic {
@@ -1359,6 +1475,10 @@ a {
 @media (max-width: 860px) {
   .dashboard-calendar-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-calendar-filters.form-row {
+    grid-template-columns: 1fr;
   }
 }
 

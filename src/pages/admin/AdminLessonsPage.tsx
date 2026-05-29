@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { FiClock, FiEdit2, FiPlus, FiX } from "react-icons/fi";
+import { FiClock, FiEdit2, FiPlus, FiRotateCcw, FiX } from "react-icons/fi";
 import {
   cancelAdminLesson,
   createAdminLesson,
@@ -31,6 +31,7 @@ export function AdminLessonsPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [actionLessonId, setActionLessonId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function load(): Promise<void> {
@@ -113,17 +114,21 @@ export function AdminLessonsPage(): JSX.Element {
   }
 
   async function onCancel(id: string): Promise<void> {
+    setActionLessonId(id);
     try {
       await cancelAdminLesson(id);
       await load();
     } catch {
       setError(t("generalError"));
+    } finally {
+      setActionLessonId(null);
     }
   }
 
   async function onReschedule(item: AdminLessonDto): Promise<void> {
     const nextStartsAt = window.prompt(t("adminLessonsReschedulePrompt"), item.starts_at);
     if (!nextStartsAt) return;
+    setActionLessonId(item.id);
     try {
       await rescheduleAdminLesson(item.id, {
         school_class: item.school_class,
@@ -135,6 +140,20 @@ export function AdminLessonsPage(): JSX.Element {
       await load();
     } catch {
       setError(t("generalError"));
+    } finally {
+      setActionLessonId(null);
+    }
+  }
+
+  async function onRestore(item: AdminLessonDto): Promise<void> {
+    setActionLessonId(item.id);
+    try {
+      await updateAdminLesson(item.id, { status: "planned" });
+      await load();
+    } catch {
+      setError(t("generalError"));
+    } finally {
+      setActionLessonId(null);
     }
   }
 
@@ -333,17 +352,31 @@ export function AdminLessonsPage(): JSX.Element {
                         onClick={() => void onReschedule(item)}
                         title={t("rescheduleAction")}
                         aria-label={t("rescheduleAction")}
+                        disabled={actionLessonId === item.id}
                       >
                         <FiClock aria-hidden="true" />
                       </button>
-                      <button
-                        className="icon-action-button danger"
-                        onClick={() => void onCancel(item.id)}
-                        title={t("cancelAction")}
-                        aria-label={t("cancelAction")}
-                      >
-                        <FiX aria-hidden="true" />
-                      </button>
+                      {item.status === "cancelled" ? (
+                        <button
+                          className="icon-action-button success"
+                          onClick={() => void onRestore(item)}
+                          title={t("restoreAction")}
+                          aria-label={t("restoreAction")}
+                          disabled={actionLessonId === item.id}
+                        >
+                          <FiRotateCcw aria-hidden="true" />
+                        </button>
+                      ) : (
+                        <button
+                          className="icon-action-button danger"
+                          onClick={() => void onCancel(item.id)}
+                          title={t("cancelAction")}
+                          aria-label={t("cancelAction")}
+                          disabled={actionLessonId === item.id}
+                        >
+                          <FiX aria-hidden="true" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

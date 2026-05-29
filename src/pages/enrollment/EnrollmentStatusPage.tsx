@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EnrollmentStatusBadge } from "../../features/enrollment/components/EnrollmentStatusBadge";
 import { getEnrollmentRequestStatus } from "../../shared/api/enrollmentApi";
 import { ApiError } from "../../shared/api/httpClient";
@@ -10,11 +10,14 @@ import { EnrollmentRequestStatusResponseDto } from "../../shared/types/enrollmen
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ENROLLMENT_TOKEN_PATTERN = /^[A-Za-z0-9._~\-]{16,512}$/;
 
 export function EnrollmentStatusPage(): JSX.Element {
   const { requestId } = useParams<{ requestId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const statusToken = searchParams.get("token")?.trim() ?? "";
 
   const [inputValue, setInputValue] = useState(requestId ?? "");
   const [result, setResult] = useState<EnrollmentRequestStatusResponseDto | null>(null);
@@ -28,7 +31,7 @@ export function EnrollmentStatusPage(): JSX.Element {
     }
     setInputValue(requestId);
     void handleLookup(requestId);
-  }, [requestId]);
+  }, [requestId, statusToken]);
 
   async function handleLookup(id: string): Promise<void> {
     if (!UUID_PATTERN.test(id)) {
@@ -36,12 +39,22 @@ export function EnrollmentStatusPage(): JSX.Element {
       setError(t("formValidationUuid"));
       return;
     }
+    if (!statusToken) {
+      setResult(null);
+      setError(t("statusTokenMissing"));
+      return;
+    }
+    if (!ENROLLMENT_TOKEN_PATTERN.test(statusToken)) {
+      setResult(null);
+      setError(t("statusTokenInvalid"));
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await getEnrollmentRequestStatus(id);
+      const response = await getEnrollmentRequestStatus(id, statusToken);
       setResult(response);
       if (response.status === "set" && response.access) {
         setAccessToken(response.access);
@@ -80,7 +93,7 @@ export function EnrollmentStatusPage(): JSX.Element {
     }, 3500);
 
     return () => window.clearInterval(intervalId);
-  }, [authDone, result]);
+  }, [authDone, result, statusToken]);
 
   return (
     <section>

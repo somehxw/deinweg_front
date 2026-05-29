@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getUserRoleFromToken, setResolvedRole, UserRole } from "../shared/auth/roles";
 import { getAdminEnrollmentList, getAdminLessonsList } from "../shared/api/adminApi";
-import { getParentChildren } from "../shared/api/parentApi";
+import { getParentChildren, getParentLessons } from "../shared/api/parentApi";
 import { getTeacherMeProfile } from "../shared/api/teacherApi";
 import { useI18n } from "../shared/i18n/I18nProvider";
-import { Link } from "react-router-dom";
 import { ApiError } from "../shared/api/httpClient";
 import { AdminLessonDto } from "../shared/types/admin";
 import { DashboardLessonsCalendar } from "../features/dashboard/components/DashboardLessonsCalendar";
+import { ParentChildDto, ParentLessonDto } from "../shared/types/parent";
+import { ParentDashboardLessonsCalendar } from "../features/dashboard/components/ParentDashboardLessonsCalendar";
 
 export function DashboardPage(): JSX.Element {
   const { t } = useI18n();
@@ -17,6 +19,12 @@ export function DashboardPage(): JSX.Element {
   const [lessons, setLessons] = useState<AdminLessonDto[]>([]);
   const [isLessonsLoading, setIsLessonsLoading] = useState(false);
   const [lessonsError, setLessonsError] = useState<string | null>(null);
+  const [parentChildren, setParentChildren] = useState<ParentChildDto[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [parentLessons, setParentLessons] = useState<ParentLessonDto[]>([]);
+  const [isParentChildrenLoading, setIsParentChildrenLoading] = useState(false);
+  const [isParentLessonsLoading, setIsParentLessonsLoading] = useState(false);
+  const [parentLessonsError, setParentLessonsError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,7 +33,6 @@ export function DashboardPage(): JSX.Element {
       setIsResolvingRole(true);
       setRole(tokenRole);
 
-      // Always probe admin permission first in case token role claims are incomplete.
       try {
         await getAdminEnrollmentList();
         if (!cancelled) {
@@ -130,15 +137,96 @@ export function DashboardPage(): JSX.Element {
     };
   }, [isResolvingRole, role, t]);
 
+  useEffect(() => {
+    if (isResolvingRole || role !== "parent") {
+      setParentChildren([]);
+      setSelectedChildId(null);
+      setParentLessons([]);
+      setIsParentChildrenLoading(false);
+      setIsParentLessonsLoading(false);
+      setParentLessonsError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadParentChildren(): Promise<void> {
+      setIsParentChildrenLoading(true);
+      setParentLessonsError(null);
+      try {
+        const response = await getParentChildren();
+        if (!cancelled) {
+          setParentChildren(response);
+          setSelectedChildId(response[0]?.id ?? null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          if (error instanceof ApiError) {
+            setParentLessonsError(`${t("scheduleChildrenLoadError")} (${error.status})`);
+          } else {
+            setParentLessonsError(t("scheduleChildrenLoadError"));
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setIsParentChildrenLoading(false);
+        }
+      }
+    }
+
+    void loadParentChildren();
+    return () => {
+      cancelled = true;
+    };
+  }, [isResolvingRole, role, t]);
+
+  useEffect(() => {
+    if (isResolvingRole || role !== "parent" || !selectedChildId) {
+      setParentLessons([]);
+      setIsParentLessonsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadChildLessons(): Promise<void> {
+      setIsParentLessonsLoading(true);
+      setParentLessonsError(null);
+      try {
+        const response = await getParentLessons({ studentId: selectedChildId });
+        if (!cancelled) {
+          setParentLessons(response);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          if (error instanceof ApiError) {
+            setParentLessonsError(`${t("generalError")} (${error.status})`);
+          } else {
+            setParentLessonsError(t("generalError"));
+          }
+          setParentLessons([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsParentLessonsLoading(false);
+        }
+      }
+    }
+
+    void loadChildLessons();
+    return () => {
+      cancelled = true;
+    };
+  }, [isResolvingRole, role, selectedChildId, t]);
+
   return (
     <section className="panel">
       <h1 className="headline">{t("dashboardTitle")}</h1>
       <p className="subline">{t("dashboardDescription")}</p>
       {isResolvingRole ? <p>{t("listLoading")}</p> : null}
+
       <div className="row">
-        {!isResolvingRole && role === "admin" ? (
-          null
-        ) : !isResolvingRole && role === "parent" ? (
+        {!isResolvingRole && role === "admin" ? null : !isResolvingRole && role === "parent" ? (
           <>
             <Link className="button secondary" to="/cabinet/parent#schedule">
               {t("openSchedule")}
@@ -180,6 +268,19 @@ export function DashboardPage(): JSX.Element {
           lessons={lessons}
           isLoading={isLessonsLoading}
           error={lessonsError}
+          t={t}
+        />
+      ) : null}
+
+      {!isResolvingRole && role === "parent" ? (
+        <ParentDashboardLessonsCalendar
+          children={parentChildren}
+          selectedChildId={selectedChildId}
+          onSelectChild={setSelectedChildId}
+          lessons={parentLessons}
+          isChildrenLoading={isParentChildrenLoading}
+          isLessonsLoading={isParentLessonsLoading}
+          error={parentLessonsError}
           t={t}
         />
       ) : null}
