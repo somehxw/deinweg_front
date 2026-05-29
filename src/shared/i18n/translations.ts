@@ -117,6 +117,10 @@ export const translations = {
 
     adminPanelTitle: "Панель адміністратора",
     adminPanelDescription: "Керування заявками, учнями та батьками.",
+    adminMobileWarningTitle: "Увага",
+    adminMobileWarningText:
+      "Ці екрани ще не повністю адаптовані для телефонів. Рекомендуємо користуватися ними з комп'ютера.",
+    adminMobileWarningConfirm: "Зрозуміло",
     adminUsersTitle: "Користувачі",
     adminClassesTitle: "Класи",
     adminLessonsTitle: "Уроки",
@@ -372,6 +376,10 @@ export const translations = {
 
     adminPanelTitle: "Admin-Bereich",
     adminPanelDescription: "Verwaltung von Antraegen, Schuelern und Eltern.",
+    adminMobileWarningTitle: "Hinweis",
+    adminMobileWarningText:
+      "Diese Bereiche sind fuer Smartphones noch nicht vollstaendig optimiert. Bitte nutzen Sie sie vorzugsweise am Computer.",
+    adminMobileWarningConfirm: "Verstanden",
     adminUsersTitle: "Benutzer",
     adminClassesTitle: "Klassen",
     adminLessonsTitle: "Unterricht",
