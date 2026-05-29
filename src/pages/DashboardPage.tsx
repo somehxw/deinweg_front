@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getUserRoleFromToken, setResolvedRole, UserRole } from "../shared/auth/roles";
 import { getAdminEnrollmentList, getAdminLessonsList } from "../shared/api/adminApi";
 import { getParentChildren, getParentLessons } from "../shared/api/parentApi";
@@ -23,6 +23,23 @@ export function DashboardPage(): JSX.Element {
   const [isParentChildrenLoading, setIsParentChildrenLoading] = useState(false);
   const [isParentLessonsLoading, setIsParentLessonsLoading] = useState(false);
   const [parentLessonsError, setParentLessonsError] = useState<string | null>(null);
+
+  const loadAdminLessons = useCallback(async (): Promise<void> => {
+    setIsLessonsLoading(true);
+    setLessonsError(null);
+    try {
+      const response = await getAdminLessonsList();
+      setLessons(response);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setLessonsError(`${t("generalError")} (${error.status})`);
+      } else {
+        setLessonsError(t("generalError"));
+      }
+    } finally {
+      setIsLessonsLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,36 +110,8 @@ export function DashboardPage(): JSX.Element {
       return;
     }
 
-    let cancelled = false;
-
-    async function loadLessons(): Promise<void> {
-      setIsLessonsLoading(true);
-      setLessonsError(null);
-      try {
-        const response = await getAdminLessonsList();
-        if (!cancelled) {
-          setLessons(response);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          if (error instanceof ApiError) {
-            setLessonsError(`${t("generalError")} (${error.status})`);
-          } else {
-            setLessonsError(t("generalError"));
-          }
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLessonsLoading(false);
-        }
-      }
-    }
-
-    void loadLessons();
-    return () => {
-      cancelled = true;
-    };
-  }, [isResolvingRole, role, t]);
+    void loadAdminLessons();
+  }, [isResolvingRole, loadAdminLessons, role]);
 
   useEffect(() => {
     if (isResolvingRole || role !== "parent") {
@@ -218,6 +207,7 @@ export function DashboardPage(): JSX.Element {
           isLoading={isLessonsLoading}
           error={lessonsError}
           t={t}
+          onLessonsChanged={loadAdminLessons}
         />
       ) : null}
 

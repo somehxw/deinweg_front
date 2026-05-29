@@ -110,7 +110,7 @@ a {
 }
 
 .nav .topbar-logout {
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid var(--primary);
   border-radius: 8px;
   min-height: 40px;
   padding: 8px 12px;
@@ -118,13 +118,25 @@ a {
   align-items: center;
   font-size: 13px;
   font-weight: 600;
-  color: var(--charcoal);
-  background: var(--card-bg);
+  color: #ffffff;
+  background: var(--primary);
   cursor: pointer;
 }
 
 .nav .topbar-logout:hover {
-  background: var(--surface-soft);
+  background: var(--primary-pressed);
+  border-color: var(--primary-pressed);
+}
+
+:root[data-theme="dark"] .nav .topbar-logout {
+  background: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+}
+
+:root[data-theme="dark"] .nav .topbar-logout:hover {
+  background: #f2f2f2;
+  border-color: #f2f2f2;
 }
 
 .nav a.active {
@@ -532,7 +544,7 @@ a {
 }
 
 .error-text {
-  margin: 14px 0 0;
+  margin: 7px 0 0;
   color: var(--error);
   font-size: 14px;
 }
@@ -554,6 +566,17 @@ a {
   margin-inline: auto;
   display: grid;
   gap: 18px;
+}
+
+.login-actions {
+  max-width: 780px;
+  margin: 14px auto 0;
+}
+
+.login-submit-button {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 12px;
 }
 
 .login-hero {
@@ -688,7 +711,7 @@ a {
 }
 
 .enrollment-shell .field {
-  gap: 9px;
+  gap: 5px;
 }
 
 .enrollment-shell .field span {
@@ -701,13 +724,50 @@ a {
   min-height: 52px;
 }
 
+.enrollment-shell .field input[type="date"] {
+  max-width: 100%;
+  min-width: 0;
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] .enrollment-shell .field input[type="date"] {
+  color-scheme: dark;
+}
+
 .enrollment-shell .field input:focus,
 .enrollment-shell .field select:focus {
   outline: none;
 }
 
+.field input.field-input-error,
+.field select.field-input-error {
+  border-color: var(--error);
+}
+
+.field input.field-input-error:focus,
+.field select.field-input-error:focus {
+  border-color: var(--error);
+  box-shadow: color-mix(in srgb, var(--error) 22%, transparent) 0 0 0 4px;
+}
+
 .enrollment-shell .field input::placeholder {
   color: color-mix(in srgb, var(--slate) 70%, transparent);
+}
+
+.enrollment-shell .field .error-text {
+  margin-top: -3px;
+}
+
+.enrollment-shell .field .field-error-text {
+  min-height: 12px;
+  line-height: 1.2;
+}
+
+.enrollment-shell .field .field-error-text.is-empty {
+  visibility: hidden;
 }
 
 .enrollment-consent {
@@ -726,6 +786,10 @@ a {
   flex: 0 0 auto;
 }
 
+.enrollment-shell .enrollment-consent + .error-text {
+  margin-top: 0;
+}
+
 .enrollment-actions {
   max-width: 780px;
   margin: 14px auto 0;
@@ -737,7 +801,7 @@ a {
 
 .enrollment-actions.two-buttons {
   display: grid;
-  grid-template-columns: minmax(140px, 0.3fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   align-items: stretch;
 }
 
@@ -751,18 +815,32 @@ a {
 }
 
 .enrollment-back-button {
-  min-height: 44px;
-  padding: 10px 14px;
+  min-height: 50px;
+  padding: 12px 24px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: none;
+  justify-content: center;
 }
 
-.enrollment-back-icon {
-  font-size: 16px;
-  line-height: 1;
+.button.enrollment-back-button {
+  background: #ffffff;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.button.enrollment-back-button:hover {
+  background: color-mix(in srgb, var(--primary) 8%, #ffffff);
+}
+
+:root[data-theme="dark"] .button.enrollment-back-button {
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--canvas));
+  color: #ffffff;
+  border-color: color-mix(in srgb, var(--primary) 82%, #ffffff);
+}
+
+:root[data-theme="dark"] .button.enrollment-back-button:hover {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface-soft));
 }
 
 .enrollment-login-hint {
@@ -1347,9 +1425,48 @@ a {
   margin-bottom: 10px;
 }
 
+.dashboard-calendar-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .dashboard-calendar-subline {
   margin-top: 6px;
   font-size: 15px;
+}
+
+.dashboard-calendar-add-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.dashboard-calendar .button.secondary.dashboard-calendar-add-button {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.dashboard-calendar .button.secondary.dashboard-calendar-add-button:hover {
+  background: var(--primary-pressed);
+  border-color: var(--primary-pressed);
+}
+
+:root[data-theme="dark"] .dashboard-calendar .button.secondary.dashboard-calendar-add-button {
+  background: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+}
+
+:root[data-theme="dark"] .dashboard-calendar .button.secondary.dashboard-calendar-add-button:hover {
+  background: #f2f2f2;
+  border-color: #f2f2f2;
 }
 
 .dashboard-calendar-grid {
@@ -1365,6 +1482,84 @@ a {
 
 .dashboard-calendar-grid.saturday-only .dashboard-day-card {
   margin-top: 4px;
+}
+
+.dashboard-saturday-timeline {
+  position: relative;
+  margin-top: 10px;
+  padding: 8px 0 8px 0;
+  display: grid;
+  gap: 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-saturday-timeline::before {
+  content: none;
+  position: absolute;
+  left: 43px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: color-mix(in srgb, var(--hairline-strong) 72%, transparent);
+}
+
+.dashboard-timeline-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  column-gap: 10px;
+  border-top: 0;
+  min-height: 30px;
+  padding: 0;
+  transition: background-color 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.dashboard-timeline-row:first-child {
+  border-top: 0;
+}
+
+.dashboard-timeline-row.drag-target {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  box-shadow: color-mix(in srgb, var(--primary) 28%, transparent) inset 0 0 0 2px;
+  border-radius: 10px;
+}
+
+.dashboard-timeline-hour {
+  justify-self: start;
+  width: 64px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--slate);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.03em;
+  border: 1px solid color-mix(in srgb, var(--hairline-strong) 75%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--canvas) 86%, var(--surface-soft));
+  min-height: 26px;
+}
+
+.dashboard-timeline-lane {
+  padding: 0;
+  min-height: 30px;
+  display: grid;
+  align-items: start;
+}
+
+.dashboard-timeline-empty {
+  display: block;
+  min-height: 26px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--hairline-strong) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 68%, transparent);
+}
+
+.dashboard-timeline-cards {
+  display: grid;
+  gap: 8px;
 }
 
 .dashboard-calendar-filters {
@@ -1384,6 +1579,20 @@ a {
   min-width: 0;
 }
 
+.dashboard-calendar-filters.form-row .field select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%235d5b54' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  background-position: calc(100% - 14px) 50%;
+}
+
+:root[data-theme="dark"] .dashboard-calendar-filters.form-row .field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%23b4bfd0' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 .dashboard-child-selector {
   margin-bottom: 12px;
 }
@@ -1393,7 +1602,16 @@ a {
   border-radius: 12px;
   padding: 12px;
   background: var(--card-bg);
-  min-height: 150px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.dashboard-day-card.drag-target {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--hairline));
+  box-shadow: color-mix(in srgb, var(--primary) 20%, transparent) 0 0 0 3px inset;
+  background: color-mix(in srgb, var(--primary) 6%, var(--card-bg));
 }
 
 .dashboard-day-title {
@@ -1415,21 +1633,104 @@ a {
   list-style: none;
   display: grid;
   gap: 6px;
+  align-content: start;
+  flex: 1 1 auto;
 }
 
 .dashboard-lesson-item {
-  border: 1px solid color-mix(in srgb, var(--hairline) 88%, transparent);
-  border-radius: 10px;
-  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--hairline) 82%, transparent);
+  border-radius: 12px;
+  padding: 8px 9px;
   display: grid;
-  gap: 2px;
-  background: var(--surface-soft);
+  gap: 3px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--primary) 14%, transparent) 0 4px, transparent 4px),
+    color-mix(in srgb, var(--surface-soft) 86%, var(--card-bg));
+  position: relative;
+  cursor: grab;
+  min-height: 46px;
+  box-shadow: rgba(16, 20, 28, 0.08) 0 6px 14px -10px;
+}
+
+.dashboard-lesson-item.dragging {
+  opacity: 0.55;
+  transform: scale(0.995);
 }
 
 .dashboard-lesson-time {
   font-size: 12px;
   font-weight: 700;
   color: var(--lesson-time);
+}
+
+.dashboard-lesson-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+}
+
+.dashboard-lesson-menu-trigger {
+  width: 24px;
+  height: 24px;
+  border: 1px solid color-mix(in srgb, var(--hairline-strong) 82%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card-bg) 88%, var(--surface-soft));
+  color: var(--slate);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dashboard-lesson-menu-trigger:hover {
+  background: var(--card-bg);
+  color: var(--charcoal);
+}
+
+.dashboard-lesson-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 12;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: rgba(0, 0, 0, 0.2) 0 8px 18px -8px;
+  min-width: 130px;
+  padding: 6px;
+}
+
+.dashboard-lesson-menu-item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--charcoal);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-lesson-menu-item:hover {
+  background: var(--surface-soft);
+}
+
+.dashboard-lesson-menu-item.danger {
+  color: var(--error);
+}
+
+.dashboard-lesson-menu-item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.dashboard-lesson-item:active {
+  cursor: grabbing;
 }
 
 .dashboard-lesson-topic {
@@ -1451,6 +1752,16 @@ a {
 }
 
 @media (max-width: 860px) {
+  .dashboard-calendar-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-calendar-add-button {
+    width: 100%;
+    justify-content: center;
+  }
+
   .dashboard-calendar-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1461,6 +1772,10 @@ a {
 }
 
 @media (max-width: 560px) {
+  .dashboard-timeline-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
   .dashboard-calendar-grid {
     grid-template-columns: 1fr;
   }
