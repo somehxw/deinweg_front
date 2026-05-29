@@ -19,7 +19,12 @@ import {
   AdminStudentClassAssignmentUpdateDto,
   AdminStudentItemDto,
   AdminStudentListPaginatedDto,
-  AdminStudentProfileDto
+  AdminStudentProfileDto,
+  AdminTeacherCreateWithUserDto,
+  AdminTeacherCreateWithUserResponseDto,
+  AdminTeacherItemDto,
+  AdminTeacherListPaginatedDto,
+  AdminTeacherUpdateDto
 } from "../types/admin";
 
 type ListResponse<T> = T[] | { results: T[] };
@@ -252,5 +257,42 @@ export async function updateAdminParentStudentLink(
 export async function deleteAdminParentStudentLink(id: string): Promise<void> {
   await httpRequest<void>(`/api/v1/admin/parent-student-links/${id}/`, {
     method: "DELETE"
+  });
+}
+
+export async function createOrUpdateAdminTeacherWithUser(
+  payload: AdminTeacherCreateWithUserDto
+): Promise<AdminTeacherCreateWithUserResponseDto> {
+  return httpRequest<AdminTeacherCreateWithUserResponseDto>(
+    "/api/v1/admin/teachers/create-with-user/",
+    {
+      method: "POST",
+      body: payload
+    }
+  );
+}
+
+export async function getAdminTeachersList(params?: {
+  search?: string;
+  position?: string;
+}): Promise<AdminTeacherItemDto[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.position) query.set("position", params.position);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  const response = await httpRequest<AdminTeacherItemDto[] | AdminTeacherListPaginatedDto>(
+    `/api/v1/admin/teachers/${suffix}`,
+    { method: "GET" }
+  );
+  return unwrapList(response as ListResponse<AdminTeacherItemDto>);
+}
+
+export async function updateAdminTeacher(
+  id: string,
+  payload: AdminTeacherUpdateDto
+): Promise<AdminTeacherItemDto> {
+  return httpRequest<AdminTeacherItemDto>(`/api/v1/admin/teachers/${id}/`, {
+    method: "PATCH",
+    body: payload
   });
 }

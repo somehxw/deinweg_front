@@ -183,3 +183,47 @@ export interface AdminParentStudentLinkUpdateDto {
   relation_type?: RelationType;
   is_primary?: boolean;
 }
+
+export type TeacherPosition = "teacher" | "assistant";
+
+export interface AdminTeacherCreateWithUserDto {
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  position: TeacherPosition;
+  hourly_rate: string | number;
+  bio?: string;
+  avatar_url?: string;
+  send_password_setup?: boolean;
+}
+
+export interface AdminTeacherCreateWithUserResponseDto {
+  id: string;
+  position: TeacherPosition;
+  email: string;
+}
+
+export interface AdminTeacherItemDto {
+  id: string;
+  email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  position: TeacherPosition;
+  hourly_rate?: string | number | null;
+  bio?: string | null;
+  avatar_url?: string | null;
+  updated_at?: string | null;
+}
+
+export interface AdminTeacherListPaginatedDto {
+  results: AdminTeacherItemDto[];
+}
+
+export interface AdminTeacherUpdateDto {
+  first_name?: string;
+  last_name?: string;
+  position?: TeacherPosition;
+  hourly_rate?: string | number;
+  bio?: string;
+  avatar_url?: string;
+}

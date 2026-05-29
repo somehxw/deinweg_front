@@ -56,6 +56,14 @@ function formatTime(startsAt: string): string {
   }).format(date);
 }
 
+function formatTeacher(lesson: AdminLessonDto): string | null {
+  if (!lesson.teacher_info) {
+    return null;
+  }
+  const fullName = `${lesson.teacher_info.first_name ?? ""} ${lesson.teacher_info.last_name ?? ""}`.trim();
+  return fullName || lesson.teacher_info.user_email || null;
+}
+
 export function DashboardLessonsCalendar({
   lessons,
   isLoading,
@@ -151,6 +159,11 @@ export function DashboardLessonsCalendar({
                           {lesson.class_name}
                           {lesson.room ? ` · ${lesson.room}` : ""}
                         </span>
+                        {formatTeacher(lesson) ? (
+                          <span className="dashboard-lesson-meta">
+                            {t("tableTeacher")}: {formatTeacher(lesson)}
+                          </span>
+                        ) : null}
                       </li>
                     ))}
                   </ul>

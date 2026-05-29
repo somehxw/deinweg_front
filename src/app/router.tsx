@@ -8,6 +8,7 @@ import { SchedulePage } from "../pages/SchedulePage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { ParentCabinetPage } from "../pages/cabinet/ParentCabinetPage";
 import { ChildCabinetPage } from "../pages/cabinet/ChildCabinetPage";
+import { TeacherCabinetPage } from "../pages/cabinet/TeacherCabinetPage";
 import { AdminEnrollmentsPage } from "../pages/admin/AdminEnrollmentsPage";
 import { AdminLayout } from "../pages/admin/AdminLayout";
 import { AdminStudentsPage } from "../pages/admin/AdminStudentsPage";
@@ -84,7 +85,16 @@ export const router = createBrowserRouter([
             ]
           },
           {
-            element: <RequireRoles allowed={["parent", "child"]} />,
+            element: <RequireRoles allowed={["teacher"]} />,
+            children: [
+              {
+                path: "cabinet/teacher",
+                element: <TeacherCabinetPage />
+              }
+            ]
+          },
+          {
+            element: <RequireRoles allowed={["parent", "child", "teacher"]} />,
             children: [
               {
                 path: "schedule",
@@ -124,8 +134,12 @@ export const router = createBrowserRouter([
                     element: <AdminStudentsPage />
                   },
                   {
-                    path: "users",
+                    path: "teachers",
                     element: <AdminUsersPage />
+                  },
+                  {
+                    path: "users",
+                    element: <Navigate to="/admin/teachers" replace />
                   },
                   {
                     path: "students/:studentId",

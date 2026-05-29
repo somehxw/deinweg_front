@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getUserRoleFromToken, setResolvedRole, UserRole } from "../shared/auth/roles";
 import { getAdminEnrollmentList, getAdminLessonsList } from "../shared/api/adminApi";
 import { getParentChildren } from "../shared/api/parentApi";
+import { getTeacherMeProfile } from "../shared/api/teacherApi";
 import { useI18n } from "../shared/i18n/I18nProvider";
 import { Link } from "react-router-dom";
 import { ApiError } from "../shared/api/httpClient";
@@ -58,6 +59,18 @@ export function DashboardPage(): JSX.Element {
         if (!cancelled) {
           setRole("parent");
           setResolvedRole("parent");
+          setIsResolvingRole(false);
+        }
+        return;
+      } catch {
+        // continue
+      }
+
+      try {
+        await getTeacherMeProfile();
+        if (!cancelled) {
+          setRole("teacher");
+          setResolvedRole("teacher");
           setIsResolvingRole(false);
         }
         return;
@@ -144,6 +157,15 @@ export function DashboardPage(): JSX.Element {
             </Link>
             <Link className="button secondary" to="/cabinet/child#grades">
               {t("openGrades")}
+            </Link>
+          </>
+        ) : !isResolvingRole && role === "teacher" ? (
+          <>
+            <Link className="button secondary" to="/cabinet/teacher">
+              {t("openCabinet")}
+            </Link>
+            <Link className="button secondary" to="/schedule">
+              {t("openSchedule")}
             </Link>
           </>
         ) : !isResolvingRole ? (

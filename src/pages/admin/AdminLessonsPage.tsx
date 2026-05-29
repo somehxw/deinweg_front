@@ -1,30 +1,36 @@
 import { FormEvent, useEffect, useState } from "react";
-import { FiClock, FiPlus, FiX } from "react-icons/fi";
+import { FiClock, FiEdit2, FiPlus, FiX } from "react-icons/fi";
 import {
   cancelAdminLesson,
   createAdminLesson,
   getAdminClassesList,
   getAdminLessonsList,
-  rescheduleAdminLesson
+  getAdminTeachersList,
+  rescheduleAdminLesson,
+  updateAdminLesson
 } from "../../shared/api/adminApi";
 import { ApiError } from "../../shared/api/httpClient";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { AdminLessonDto, AdminSchoolClassDto, WeekDay } from "../../shared/types/admin";
+import { AdminLessonDto, AdminSchoolClassDto, AdminTeacherItemDto, WeekDay } from "../../shared/types/admin";
 import { localizeLessonStatus, localizeWeekDay } from "../../shared/i18n/backendLabels";
 
 export function AdminLessonsPage(): JSX.Element {
   const { t } = useI18n();
   const [items, setItems] = useState<AdminLessonDto[]>([]);
   const [classes, setClasses] = useState<AdminSchoolClassDto[]>([]);
+  const [teachers, setTeachers] = useState<AdminTeacherItemDto[]>([]);
   const [schoolClass, setSchoolClass] = useState("");
   const [startsAtTime, setStartsAtTime] = useState("");
   const [weekDay, setWeekDay] = useState<WeekDay>("monday");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [topic, setTopic] = useState("");
   const [room, setRoom] = useState("");
+  const [editingLesson, setEditingLesson] = useState<AdminLessonDto | null>(null);
+  const [selectedTeacher, setSelectedTeacher] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function load(): Promise<void> {
@@ -57,6 +63,17 @@ export function AdminLessonsPage(): JSX.Element {
       }
     }
     void loadClasses();
+  }, []);
+
+  useEffect(() => {
+    async function loadTeachers(): Promise<void> {
+      try {
+        setTeachers(await getAdminTeachersList());
+      } catch {
+        setTeachers([]);
+      }
+    }
+    void loadTeachers();
   }, []);
 
   async function onCreate(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -118,6 +135,35 @@ export function AdminLessonsPage(): JSX.Element {
       await load();
     } catch {
       setError(t("generalError"));
+    }
+  }
+
+  function onOpenEdit(item: AdminLessonDto): void {
+    setEditingLesson(item);
+    setSelectedTeacher(item.teacher ?? "");
+    setIsEditOpen(true);
+  }
+
+  async function onEditTeacher(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    if (!editingLesson) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await updateAdminLesson(editingLesson.id, {
+        teacher: selectedTeacher || null
+      });
+      setIsEditOpen(false);
+      setEditingLesson(null);
+      await load();
+    } catch (submitError) {
+      if (submitError instanceof ApiError) {
+        setError(`${t("generalError")} (${submitError.status})`);
+      } else {
+        setError(t("generalError"));
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -215,6 +261,35 @@ export function AdminLessonsPage(): JSX.Element {
         </div>
       ) : null}
 
+      {isEditOpen && editingLesson ? (
+        <div className="modal-overlay" role="presentation" onClick={() => setIsEditOpen(false)}>
+          <form className="modal-card" onSubmit={onEditTeacher} onClick={(event) => event.stopPropagation()}>
+            <h3 className="section-heading">{t("adminLessonsEditTeacherTitle")}</h3>
+            <div className="form-grid">
+              <label className="field">
+                <span>{t("tableTeacher")}</span>
+                <select value={selectedTeacher} onChange={(event) => setSelectedTeacher(event.target.value)}>
+                  <option value="">{t("adminLessonsNoTeacher")}</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {formatTeacherLabel(teacher)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="actions">
+              <button type="button" className="button secondary" onClick={() => setIsEditOpen(false)}>
+                {t("formBack")}
+              </button>
+              <button type="submit" className="button" disabled={isSubmitting}>
+                {isSubmitting ? t("formSubmitting") : t("saveAction")}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
       {isLoading ? <p>{t("listLoading")}</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
 
@@ -228,6 +303,7 @@ export function AdminLessonsPage(): JSX.Element {
                 <th>{t("tableLessonTime")}</th>
                 <th>{t("tableDuration")}</th>
                 <th>{t("tableLessonSubject")}</th>
+                <th>{t("tableTeacher")}</th>
                 <th>{t("tableStatus")}</th>
                 <th className="actions-col">{t("tableActions")}</th>
               </tr>
@@ -240,9 +316,18 @@ export function AdminLessonsPage(): JSX.Element {
                   <td>{item.starts_at}</td>
                   <td>{item.duration_minutes}</td>
                   <td>{item.topic ?? "-"}</td>
+                  <td>{item.teacher_info ? `${item.teacher_info.first_name} ${item.teacher_info.last_name}`.trim() : "-"}</td>
                   <td>{localizeLessonStatus(item.status, t)}</td>
                   <td className="actions-col">
                     <div className="table-actions">
+                      <button
+                        className="icon-action-button"
+                        onClick={() => onOpenEdit(item)}
+                        title={t("editAction")}
+                        aria-label={t("editAction")}
+                      >
+                        <FiEdit2 aria-hidden="true" />
+                      </button>
                       <button
                         className="icon-action-button"
                         onClick={() => void onReschedule(item)}
@@ -269,4 +354,10 @@ export function AdminLessonsPage(): JSX.Element {
       ) : null}
     </section>
   );
+}
+
+function formatTeacherLabel(item: AdminTeacherItemDto): string {
+  const fullName = `${item.first_name ?? ""} ${item.last_name ?? ""}`.trim();
+  if (fullName) return `${fullName} (${item.email})`;
+  return item.email;
 }

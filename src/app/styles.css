@@ -445,6 +445,28 @@ a {
   margin-top: 16px;
 }
 
+.checkbox-field {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkbox-field span {
+  order: 2;
+  font-size: 15px;
+}
+
+.checkbox-field input[type="checkbox"] {
+  order: 1;
+  width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  height: 20px;
+  margin: 0;
+  border-radius: 6px;
+  padding: 0;
+}
+
 .admin-filter-field {
   min-width: 220px;
 }

@@ -1,6 +1,6 @@
 import { getAccessToken } from "./tokenStorage";
 
-export type UserRole = "parent" | "child" | "admin" | "unknown";
+export type UserRole = "parent" | "child" | "teacher" | "admin" | "unknown";
 
 const RESOLVED_ROLE_KEY = "deinweg_resolved_role";
 
@@ -34,6 +34,7 @@ function normalizeRole(raw: unknown): UserRole {
   const value = raw.toLowerCase();
   if (value === "parent") return "parent";
   if (value === "child" || value === "student") return "child";
+  if (value === "teacher" || value === "assistant") return "teacher";
   if (value === "admin" || value === "staff") return "admin";
   return "unknown";
 }
@@ -55,14 +56,14 @@ function normalizeRoleFromCollection(raw: unknown): UserRole {
 
 function readResolvedRole(): UserRole {
   const raw = localStorage.getItem(RESOLVED_ROLE_KEY);
-  if (raw === "admin" || raw === "parent" || raw === "child") {
+  if (raw === "admin" || raw === "parent" || raw === "child" || raw === "teacher") {
     return raw;
   }
   return "unknown";
 }
 
 export function setResolvedRole(role: UserRole): void {
-  if (role === "admin" || role === "parent" || role === "child") {
+  if (role === "admin" || role === "parent" || role === "child" || role === "teacher") {
     localStorage.setItem(RESOLVED_ROLE_KEY, role);
     return;
   }
@@ -133,7 +134,7 @@ export function getUserRoleFromToken(): UserRole {
 }
 
 export function getDefaultRouteByRole(role: UserRole): string {
-  if (role === "admin" || role === "parent" || role === "child") {
+  if (role === "admin" || role === "parent" || role === "child" || role === "teacher") {
     return "/home";
   }
   return "/login";
@@ -147,13 +148,16 @@ export function canRoleAccessPath(role: UserRole, path: string): boolean {
     return role !== "unknown";
   }
   if (path.startsWith("/schedule")) {
-    return role === "parent" || role === "child";
+    return role === "parent" || role === "child" || role === "teacher";
   }
   if (path.startsWith("/cabinet/parent")) {
     return role === "parent";
   }
   if (path.startsWith("/cabinet/child")) {
     return role === "child";
+  }
+  if (path.startsWith("/cabinet/teacher")) {
+    return role === "teacher";
   }
   if (path.startsWith("/admin")) {
     return role === "admin";

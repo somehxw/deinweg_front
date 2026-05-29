@@ -22,8 +22,10 @@ export function AppSidebar(): JSX.Element {
   const isAdmin = role === "admin";
   const isParent = role === "parent";
   const isChild = role === "child";
+  const isTeacher = role === "teacher";
   const adminRegistriesOpen = location.pathname.startsWith("/admin/students")
     || location.pathname.startsWith("/admin/parents")
+    || location.pathname.startsWith("/admin/teachers")
     || location.pathname.startsWith("/admin/users");
   const adminManagementOpenByPath = location.pathname.startsWith("/admin/enrollments");
   const [isAdminManagementOpen, setIsAdminManagementOpen] = useState(adminManagementOpenByPath);
@@ -37,7 +39,7 @@ export function AppSidebar(): JSX.Element {
           <span>{t("sidebarHome")}</span>
         </NavLink>
 
-        {(isParent || isChild) ? (
+        {(isParent || isChild || isTeacher) ? (
           <NavLink to="/schedule" className="sidebar-link" title={t("sidebarSchedule")}>
             <FiBookOpen aria-hidden="true" />
             <span>{t("sidebarSchedule")}</span>
@@ -120,7 +122,7 @@ export function AppSidebar(): JSX.Element {
             {isRegistriesOpen ? (
               <div className={`sidebar-submenu${adminRegistriesOpen ? " open" : ""}`}>
                 <NavLink
-                  to="/admin/users"
+                  to="/admin/teachers"
                   className="sidebar-link nested sublink"
                   title={t("sidebarRegistryUsers")}
                 >
