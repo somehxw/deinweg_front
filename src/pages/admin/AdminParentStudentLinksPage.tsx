@@ -3,12 +3,19 @@ import { FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import {
   createAdminParentStudentLink,
   deleteAdminParentStudentLink,
+  getAdminParentsList,
   getAdminParentStudentLinksList,
+  getAdminStudentsList,
   updateAdminParentStudentLink
 } from "../../shared/api/adminApi";
 import { ApiError } from "../../shared/api/httpClient";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { AdminParentStudentLinkDto, RelationType } from "../../shared/types/admin";
+import {
+  AdminParentItemDto,
+  AdminParentStudentLinkDto,
+  AdminStudentItemDto,
+  RelationType
+} from "../../shared/types/admin";
 import { localizeRelationType } from "../../shared/i18n/backendLabels";
 
 export function AdminParentStudentLinksPage(): JSX.Element {
@@ -17,10 +24,12 @@ export function AdminParentStudentLinksPage(): JSX.Element {
   const [parentId, setParentId] = useState("");
   const [studentId, setStudentId] = useState("");
   const [relationType, setRelationType] = useState<RelationType>("other");
-  const [isPrimary, setIsPrimary] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReferenceLoading, setIsReferenceLoading] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [parents, setParents] = useState<AdminParentItemDto[]>([]);
+  const [students, setStudents] = useState<AdminStudentItemDto[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function load(): Promise<void> {
@@ -43,22 +52,66 @@ export function AdminParentStudentLinksPage(): JSX.Element {
     void load();
   }, [t]);
 
+  useEffect(() => {
+    if (!isCreateOpen) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadReferences(): Promise<void> {
+      setIsReferenceLoading(true);
+      try {
+        const [parentsResponse, studentsResponse] = await Promise.all([
+          getAdminParentsList(),
+          getAdminStudentsList()
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setParents(parentsResponse);
+        setStudents(studentsResponse);
+      } catch (loadError) {
+        if (!isMounted) {
+          return;
+        }
+
+        if (loadError instanceof ApiError) {
+          setError(`${t("generalError")} (${loadError.status})`);
+        } else {
+          setError(t("generalError"));
+        }
+      } finally {
+        if (isMounted) {
+          setIsReferenceLoading(false);
+        }
+      }
+    }
+
+    void loadReferences();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isCreateOpen, t]);
+
   async function onCreate(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!parentId.trim() || !studentId.trim()) return;
+    if (!parentId || !studentId) return;
     setIsSubmitting(true);
     setError(null);
     try {
       await createAdminParentStudentLink({
-        parent: parentId.trim(),
-        student: studentId.trim(),
+        parent: parentId,
+        student: studentId,
         relation_type: relationType,
-        is_primary: isPrimary
+        is_primary: false
       });
       setParentId("");
       setStudentId("");
       setRelationType("other");
-      setIsPrimary(false);
       setIsCreateOpen(false);
       await load();
     } catch (submitError) {
@@ -112,12 +165,40 @@ export function AdminParentStudentLinksPage(): JSX.Element {
             <div className="form-grid">
               <div className="form-row">
                 <label className="field">
-                  <span>{t("tableParentId")}</span>
-                  <input value={parentId} onChange={(event) => setParentId(event.target.value)} required />
+                  <span>{t("tableParent")}</span>
+                  <select
+                    value={parentId}
+                    onChange={(event) => setParentId(event.target.value)}
+                    disabled={isReferenceLoading}
+                    required
+                  >
+                    <option value="" disabled>
+                      {`-- ${t("tableParent")} --`}
+                    </option>
+                    {parents.map((parent) => (
+                      <option key={parent.id} value={parent.id}>
+                        {`${parent.last_name} ${parent.first_name} (${parent.user_email})`}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="field">
-                  <span>{t("tableStudentId")}</span>
-                  <input value={studentId} onChange={(event) => setStudentId(event.target.value)} required />
+                  <span>{t("tableStudent")}</span>
+                  <select
+                    value={studentId}
+                    onChange={(event) => setStudentId(event.target.value)}
+                    disabled={isReferenceLoading}
+                    required
+                  >
+                    <option value="" disabled>
+                      {`-- ${t("tableStudent")} --`}
+                    </option>
+                    {students.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {`${student.last_name} ${student.first_name}`}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
               <div className="form-row">
@@ -127,29 +208,33 @@ export function AdminParentStudentLinksPage(): JSX.Element {
                     value={relationType}
                     onChange={(event) => setRelationType(event.target.value as RelationType)}
                   >
-                    <option value="mother">mother</option>
-                    <option value="father">father</option>
-                    <option value="guardian">guardian</option>
-                    <option value="other">other</option>
-                  </select>
-                </label>
-                <label className="field">
-                  <span>{t("tablePrimary")}</span>
-                  <select
-                    value={isPrimary ? "1" : "0"}
-                    onChange={(event) => setIsPrimary(event.target.value === "1")}
-                  >
-                    <option value="1">{t("yesValue")}</option>
-                    <option value="0">{t("noValue")}</option>
+                    <option value="mother">{localizeRelationType("mother", t)}</option>
+                    <option value="father">{localizeRelationType("father", t)}</option>
+                    <option value="guardian">{localizeRelationType("guardian", t)}</option>
+                    <option value="other">{localizeRelationType("other", t)}</option>
                   </select>
                 </label>
               </div>
             </div>
+            {!isReferenceLoading && (parents.length === 0 || students.length === 0) ? (
+              <p className="error-text">{t("listEmpty")}</p>
+            ) : null}
             <div className="actions">
               <button type="button" className="button secondary" onClick={() => setIsCreateOpen(false)}>
                 {t("formBack")}
               </button>
-              <button type="submit" className="button" disabled={isSubmitting}>
+              <button
+                type="submit"
+                className="button"
+                disabled={
+                  isSubmitting ||
+                  isReferenceLoading ||
+                  parents.length === 0 ||
+                  students.length === 0 ||
+                  !parentId ||
+                  !studentId
+                }
+              >
                 {isSubmitting ? t("formSubmitting") : t("createAction")}
               </button>
             </div>
@@ -166,8 +251,8 @@ export function AdminParentStudentLinksPage(): JSX.Element {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>{t("tableParentId")}</th>
-                <th>{t("tableStudentId")}</th>
+                <th>{t("tableParent")}</th>
+                <th>{t("tableStudent")}</th>
                 <th>{t("tableRelationType")}</th>
                 <th>{t("tablePrimary")}</th>
                 <th className="actions-col">{t("tableActions")}</th>

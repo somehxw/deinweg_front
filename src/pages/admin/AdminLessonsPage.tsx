@@ -2,8 +2,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { FiClock, FiEdit2, FiPlus, FiRotateCcw, FiX } from "react-icons/fi";
 import {
   cancelAdminLesson,
-  createAdminLesson,
-  getAdminClassesList,
   getAdminLessonsList,
   getAdminTeachersList,
   rescheduleAdminLesson,
@@ -11,20 +9,29 @@ import {
 } from "../../shared/api/adminApi";
 import { ApiError } from "../../shared/api/httpClient";
 import { useI18n } from "../../shared/i18n/I18nProvider";
-import { AdminLessonDto, AdminSchoolClassDto, AdminTeacherItemDto, WeekDay } from "../../shared/types/admin";
+import { AdminLessonDto, AdminTeacherItemDto } from "../../shared/types/admin";
 import { localizeLessonStatus, localizeWeekDay } from "../../shared/i18n/backendLabels";
+import { AdminLessonCreateModal } from "../../features/admin/components/AdminLessonCreateModal";
+
+function formatLocalDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("uk-UA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
 
 export function AdminLessonsPage(): JSX.Element {
   const { t } = useI18n();
   const [items, setItems] = useState<AdminLessonDto[]>([]);
-  const [classes, setClasses] = useState<AdminSchoolClassDto[]>([]);
   const [teachers, setTeachers] = useState<AdminTeacherItemDto[]>([]);
-  const [schoolClass, setSchoolClass] = useState("");
-  const [startsAtTime, setStartsAtTime] = useState("");
-  const [weekDay, setWeekDay] = useState<WeekDay>("monday");
-  const [durationMinutes, setDurationMinutes] = useState("60");
-  const [topic, setTopic] = useState("");
-  const [room, setRoom] = useState("");
   const [editingLesson, setEditingLesson] = useState<AdminLessonDto | null>(null);
   const [selectedTeacher, setSelectedTeacher] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -55,18 +62,6 @@ export function AdminLessonsPage(): JSX.Element {
   }, [t]);
 
   useEffect(() => {
-    async function loadClasses(): Promise<void> {
-      try {
-        const response = await getAdminClassesList();
-        setClasses(response.filter((item) => item.active !== false));
-      } catch {
-        setClasses([]);
-      }
-    }
-    void loadClasses();
-  }, []);
-
-  useEffect(() => {
     async function loadTeachers(): Promise<void> {
       try {
         setTeachers(await getAdminTeachersList());
@@ -76,42 +71,6 @@ export function AdminLessonsPage(): JSX.Element {
     }
     void loadTeachers();
   }, []);
-
-  async function onCreate(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    if (!schoolClass.trim() || !startsAtTime) return;
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      const now = new Date();
-      const datePart = now.toISOString().slice(0, 10);
-      const startsAtIso = new Date(`${datePart}T${startsAtTime}:00`).toISOString();
-      await createAdminLesson({
-        school_class: schoolClass.trim(),
-        starts_at: startsAtIso,
-        week_day: weekDay,
-        duration_minutes: Number(durationMinutes),
-        topic: topic.trim() || undefined,
-        room: room.trim() || undefined
-      });
-      setSchoolClass("");
-      setStartsAtTime("");
-      setWeekDay("monday");
-      setDurationMinutes("60");
-      setTopic("");
-      setRoom("");
-      setIsCreateOpen(false);
-      await load();
-    } catch (submitError) {
-      if (submitError instanceof ApiError) {
-        setError(`${t("generalError")} (${submitError.status})`);
-      } else {
-        setError(t("generalError"));
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
 
   async function onCancel(id: string): Promise<void> {
     setActionLessonId(id);
@@ -201,84 +160,11 @@ export function AdminLessonsPage(): JSX.Element {
         </button>
       </div>
 
-      {isCreateOpen ? (
-        <div className="modal-overlay" role="presentation" onClick={() => setIsCreateOpen(false)}>
-          <form className="modal-card" onSubmit={onCreate} onClick={(event) => event.stopPropagation()}>
-            <h3 className="section-heading">{t("adminLessonsTitle")}</h3>
-            <div className="form-grid">
-              <div className="form-row">
-                <label className="field">
-                  <span>{t("tableClassId")}</span>
-                  <select
-                    value={schoolClass}
-                    onChange={(event) => setSchoolClass(event.target.value)}
-                    required
-                  >
-                    <option value="">{t("selectClassPlaceholder")}</option>
-                    {classes.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>{t("tableLessonTime")}</span>
-                  <input
-                    type="time"
-                    value={startsAtTime}
-                    onChange={(event) => setStartsAtTime(event.target.value)}
-                    required
-                  />
-                </label>
-              </div>
-              <label className="field">
-                <span>{t("tableLessonDay")}</span>
-                <select
-                  value={weekDay}
-                  onChange={(event) => setWeekDay(event.target.value as WeekDay)}
-                >
-                  <option value="monday">{localizeWeekDay("monday", t)}</option>
-                  <option value="tuesday">{localizeWeekDay("tuesday", t)}</option>
-                  <option value="wednesday">{localizeWeekDay("wednesday", t)}</option>
-                  <option value="thursday">{localizeWeekDay("thursday", t)}</option>
-                  <option value="friday">{localizeWeekDay("friday", t)}</option>
-                  <option value="saturday">{localizeWeekDay("saturday", t)}</option>
-                  <option value="sunday">{localizeWeekDay("sunday", t)}</option>
-                </select>
-              </label>
-              <div className="form-row">
-                <label className="field">
-                  <span>{t("tableDuration")}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={durationMinutes}
-                    onChange={(event) => setDurationMinutes(event.target.value)}
-                    required
-                  />
-                </label>
-                <label className="field">
-                  <span>{t("tableLessonSubject")}</span>
-                  <input value={topic} onChange={(event) => setTopic(event.target.value)} />
-                </label>
-              </div>
-              <label className="field">
-                <span>{t("tableRoom")}</span>
-                <input value={room} onChange={(event) => setRoom(event.target.value)} />
-              </label>
-            </div>
-            <div className="actions">
-              <button type="button" className="button secondary" onClick={() => setIsCreateOpen(false)}>
-                {t("formBack")}
-              </button>
-              <button type="submit" className="button" disabled={isSubmitting}>
-                {isSubmitting ? t("formSubmitting") : t("createAction")}
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : null}
+      <AdminLessonCreateModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreated={load}
+      />
 
       {isEditOpen && editingLesson ? (
         <div className="modal-overlay" role="presentation" onClick={() => setIsEditOpen(false)}>
@@ -332,7 +218,7 @@ export function AdminLessonsPage(): JSX.Element {
                 <tr key={item.id}>
                   <td>{item.class_name}</td>
                   <td>{localizeWeekDay(item.week_day, t)}</td>
-                  <td>{item.starts_at}</td>
+                  <td>{formatLocalDateTime(item.starts_at)}</td>
                   <td>{item.duration_minutes}</td>
                   <td>{item.topic ?? "-"}</td>
                   <td>{item.teacher_info ? `${item.teacher_info.first_name} ${item.teacher_info.last_name}`.trim() : "-"}</td>

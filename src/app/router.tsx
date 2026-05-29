@@ -20,6 +20,7 @@ import { AdminClassesPage } from "../pages/admin/AdminClassesPage";
 import { AdminLessonsPage } from "../pages/admin/AdminLessonsPage";
 import { AdminParentStudentLinksPage } from "../pages/admin/AdminParentStudentLinksPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { NewsPage } from "../pages/news/NewsPage";
 import { RequireAuth } from "./guards/RequireAuth";
 import { RequireRoles } from "./guards/RequireRoles";
 import { RedirectIfAuth } from "./guards/RedirectIfAuth";
@@ -45,6 +46,10 @@ export const router = createBrowserRouter([
       {
         path: "set-password",
         element: <SetPasswordPage />
+      },
+      {
+        path: "news",
+        element: <NewsPage />
       },
       {
         element: <RedirectIfAuth />,
