@@ -358,7 +358,10 @@ export const translations = {
     logout: "Вийти",
 
     notFoundTitle: "Сторінку не знайдено",
-    notFoundBack: "На головну"
+    notFoundBack: "На головну",
+    notFoundDescription: "Сторінка може бути видалена або переміщена.",
+    notFoundActionNews: "Перейти до новин",
+    notFoundActionEnrollment: "Подати заявку"
   },
   de: {
     appTitle: "deinweg",
@@ -714,7 +717,10 @@ export const translations = {
     logout: "Abmelden",
 
     notFoundTitle: "Seite nicht gefunden",
-    notFoundBack: "Zur Startseite"
+    notFoundBack: "Zur Startseite",
+    notFoundDescription: "Die Seite wurde entfernt oder an eine andere Adresse verschoben.",
+    notFoundActionNews: "Zu den Neuigkeiten",
+    notFoundActionEnrollment: "Antrag senden"
   }
 } as const;
 

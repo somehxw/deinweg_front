@@ -1443,6 +1443,40 @@ a {
   }
 }
 
+.not-found-page {
+  max-width: 780px;
+  margin: 0 auto;
+  border-radius: 22px;
+  padding: 34px 30px;
+  display: grid;
+  gap: 10px;
+}
+
+.not-found-code {
+  margin: 0;
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--primary) 36%, var(--hairline-strong));
+  border-radius: 6px;
+  padding: 2px 8px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.not-found-subline {
+  margin-top: 0;
+  margin-bottom: 4px;
+  font-size: 17px;
+}
+
+.not-found-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 @media (max-width: 860px) {
   .container {
     width: min(100% - 28px, 1100px);
@@ -1560,6 +1594,21 @@ a {
 
   .modal-card {
     padding: 16px;
+  }
+
+  .not-found-page {
+    padding: 24px 22px;
+    border-radius: 18px;
+  }
+
+  .not-found-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .not-found-actions .button {
+    width: 100%;
+    justify-content: center;
   }
 }
 

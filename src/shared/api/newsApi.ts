@@ -1,5 +1,10 @@
 import { httpRequest } from "./httpClient";
-import { CreateNewsPayload, NewsItemDto, UpdateNewsPayload } from "../types/news";
+import {
+  CreateNewsPayload,
+  NewsItemDto,
+  ToggleNewsLikeResponse,
+  UpdateNewsPayload
+} from "../types/news";
 
 function buildNewsFormData(payload: CreateNewsPayload | UpdateNewsPayload): FormData {
   const formData = new FormData();
@@ -62,5 +67,11 @@ export async function deleteNews(newsId: string): Promise<void> {
 export async function deleteNewsImage(imageId: string): Promise<void> {
   await httpRequest<void>(`/api/v1/news/images/${imageId}/`, {
     method: "DELETE"
+  });
+}
+
+export async function toggleNewsLike(newsId: string): Promise<ToggleNewsLikeResponse> {
+  return httpRequest<ToggleNewsLikeResponse>(`/api/v1/news/${newsId}/like/`, {
+    method: "POST"
   });
 }
