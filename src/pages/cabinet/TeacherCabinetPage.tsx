@@ -1,9 +1,53 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ApiError } from "../../shared/api/httpClient";
-import { getTeacherMeLessons } from "../../shared/api/teacherApi";
+import { getTeacherMeLessons, getTeacherMeProfile } from "../../shared/api/teacherApi";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { localizeWeekDay } from "../../shared/i18n/backendLabels";
-import { TeacherLessonDto } from "../../shared/types/teacher";
+import { TeacherLessonDto, TeacherProfileDto } from "../../shared/types/teacher";
+import { TeacherFeedbackManager } from "../../features/feedback/components/TeacherFeedbackManager";
+import { TeacherAttendanceManager } from "../../features/feedback/components/TeacherAttendanceManager";
+import { TeacherProfileForm } from "../../features/teacher/components/TeacherProfileForm";
+
+const WEEK_DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday"
+] as const;
+
+type WeekDay = (typeof WEEK_DAYS)[number];
+
+function resolveWeekDay(lesson: TeacherLessonDto): WeekDay | null {
+  if (lesson.week_day && WEEK_DAYS.includes(lesson.week_day as WeekDay)) {
+    return lesson.week_day as WeekDay;
+  }
+
+  if (!lesson.starts_at) {
+    return null;
+  }
+
+  const date = new Date(lesson.starts_at);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const dayIndex = date.getDay();
+  const mapped: Record<number, WeekDay> = {
+    0: "sunday",
+    1: "monday",
+    2: "tuesday",
+    3: "wednesday",
+    4: "thursday",
+    5: "friday",
+    6: "saturday"
+  };
+
+  return mapped[dayIndex] ?? null;
+}
 
 function formatTime(startsAt: string | undefined): string {
   if (!startsAt) return "-";
@@ -17,10 +61,22 @@ function formatTime(startsAt: string | undefined): string {
 
 export function TeacherCabinetPage(): JSX.Element {
   const { t } = useI18n();
+  const [searchParams] = useSearchParams();
   const [lessons, setLessons] = useState<TeacherLessonDto[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [dayScope, setDayScope] = useState<"all" | "saturday">("saturday");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<TeacherProfileDto | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const sectionParam = searchParams.get("section");
+  const activeSection: "schedule" | "feedback" | "attendance" | "profile" =
+    sectionParam === "feedback" ||
+    sectionParam === "attendance" ||
+    sectionParam === "profile"
+      ? sectionParam
+      : "schedule";
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +117,41 @@ export function TeacherCabinetPage(): JSX.Element {
     };
   }, [t]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProfile(): Promise<void> {
+      setIsProfileLoading(true);
+      setProfileError(null);
+      try {
+        const response = await getTeacherMeProfile();
+        if (!cancelled) {
+          setProfile(response);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          if (loadError instanceof ApiError) {
+            setProfileError(`${t("teacherProfileLoadError")} (${loadError.status})`);
+          } else {
+            setProfileError(t("teacherProfileLoadError"));
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setIsProfileLoading(false);
+        }
+      }
+    }
+
+    if (activeSection === "profile") {
+      void loadProfile();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSection, t]);
+
   const classOptions = useMemo(() => {
     const unique = new Set<string>();
     lessons.forEach((lesson) => {
@@ -73,37 +164,65 @@ export function TeacherCabinetPage(): JSX.Element {
   }, [lessons]);
 
   const filteredLessons = useMemo(() => {
-    if (selectedClass === "all") return lessons;
     return lessons.filter((lesson) => {
+      if (dayScope === "saturday" && resolveWeekDay(lesson) !== "saturday") {
+        return false;
+      }
+      if (selectedClass === "all") {
+        return true;
+      }
+      const classValue = lesson.class_name || lesson.school_class;
+      return classValue === selectedClass;
+    });
+  }, [dayScope, lessons, selectedClass]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<WeekDay, TeacherLessonDto[]>();
+    for (const day of WEEK_DAYS) {
+      map.set(day, []);
+    }
+    filteredLessons.forEach((lesson) => {
+      const key = resolveWeekDay(lesson);
+      if (!key) {
+        return;
+      }
+      map.get(key)?.push(lesson);
+    });
+
+    for (const day of WEEK_DAYS) {
+      const items = map.get(day) ?? [];
+      items.sort((a, b) => {
+        const left = a.starts_at ? new Date(a.starts_at).getTime() : 0;
+        const right = b.starts_at ? new Date(b.starts_at).getTime() : 0;
+        return left - right;
+      });
+      map.set(day, items);
+    }
+
+    return map;
+  }, [filteredLessons]);
+
+  const visibleDays = useMemo<WeekDay[]>(
+    () => (dayScope === "saturday" ? ["saturday"] : [...WEEK_DAYS]),
+    [dayScope]
+  );
+
+  const hasVisibleLessons = useMemo(() => {
+    return visibleDays.some((day) => (grouped.get(day) ?? []).length > 0);
+  }, [grouped, visibleDays]);
+
+  const hasAnyLessonsForClass = useMemo(() => {
+    if (selectedClass === "all") {
+      return lessons.length > 0;
+    }
+    return lessons.some((lesson) => {
       const classValue = lesson.class_name || lesson.school_class;
       return classValue === selectedClass;
     });
   }, [lessons, selectedClass]);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, TeacherLessonDto[]>();
-    filteredLessons.forEach((lesson) => {
-      const key = lesson.week_day || "unknown";
-      if (!map.has(key)) {
-        map.set(key, []);
-      }
-      map.get(key)?.push(lesson);
-    });
-    return map;
-  }, [filteredLessons]);
-
-  const weekDays: string[] = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday"
-  ];
-
   return (
-    <section className="panel">
+    <section className="panel teacher-cabinet-panel">
       <h1 className="headline">{t("teacherCabinetTitle")}</h1>
       <p className="subline">{t("teacherCabinetDescription")}</p>
 
@@ -112,7 +231,7 @@ export function TeacherCabinetPage(): JSX.Element {
 
       {!isLoading && !error && lessons.length === 0 ? <p>{t("teacherLessonsEmpty")}</p> : null}
 
-      {!isLoading && !error && lessons.length > 0 ? (
+      {!isLoading && !error && lessons.length > 0 && activeSection === "schedule" ? (
         <section className="dashboard-calendar panel">
           <div className="dashboard-calendar-filters form-row">
             <label className="field">
@@ -126,9 +245,20 @@ export function TeacherCabinetPage(): JSX.Element {
                 ))}
               </select>
             </label>
+            <label className="field">
+              <span>{t("calendarDayScopeLabel")}</span>
+              <select
+                value={dayScope}
+                onChange={(event) => setDayScope(event.target.value as "all" | "saturday")}
+              >
+                <option value="saturday">{t("calendarDayScopeSaturday")}</option>
+                <option value="all">{t("calendarDayScopeAll")}</option>
+              </select>
+            </label>
           </div>
-          <div className="dashboard-calendar-grid">
-            {weekDays.map((weekDay) => {
+          {hasAnyLessonsForClass && !hasVisibleLessons ? <p>{t("listEmpty")}</p> : null}
+          <div className={`dashboard-calendar-grid${dayScope === "saturday" ? " saturday-only" : ""}`}>
+            {visibleDays.map((weekDay) => {
               const dayLessons = grouped.get(weekDay) ?? [];
               return (
                 <article key={weekDay} className="dashboard-day-card">
@@ -154,6 +284,26 @@ export function TeacherCabinetPage(): JSX.Element {
             })}
           </div>
         </section>
+      ) : null}
+
+      {activeSection === "feedback" ? (
+        <TeacherFeedbackManager
+          lessons={lessons}
+          isLessonsLoading={isLoading}
+          lessonsError={error}
+          t={t}
+        />
+      ) : null}
+      {activeSection === "attendance" ? (
+        <TeacherAttendanceManager
+          lessons={lessons}
+          isLessonsLoading={isLoading}
+          lessonsError={error}
+          t={t}
+        />
+      ) : null}
+      {activeSection === "profile" ? (
+        <TeacherProfileForm profile={profile} isLoading={isProfileLoading} loadError={profileError} t={t} />
       ) : null}
     </section>
   );

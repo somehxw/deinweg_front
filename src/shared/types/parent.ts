@@ -19,4 +19,13 @@ export interface ParentLessonDto {
   topic?: string;
   room?: string;
   class_name?: string;
+  teacher?: string;
+}
+
+export interface ParentAttendanceDto {
+  id: string;
+  lesson: string;
+  student: string;
+  status: "present" | "absent" | "late" | "excused";
+  comment?: string;
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { getUserRoleFromToken, setResolvedRole, UserRole } from "../shared/auth/roles";
 import { getAdminEnrollmentList, getAdminLessonsList } from "../shared/api/adminApi";
 import { getParentChildren, getParentLessons } from "../shared/api/parentApi";
@@ -208,49 +208,43 @@ export function DashboardPage(): JSX.Element {
     };
   }, [isResolvingRole, role, selectedChildId, t]);
 
+  if (!isResolvingRole && role === "teacher") {
+    return <Navigate to="/cabinet/teacher?section=schedule" replace />;
+  }
+
   return (
     <section className="panel">
       <h1 className="headline">{t("dashboardTitle")}</h1>
       <p className="subline">{t("dashboardDescription")}</p>
       {isResolvingRole ? <p>{t("listLoading")}</p> : null}
 
-      <div className="row">
-        {!isResolvingRole && role === "admin" ? null : !isResolvingRole && role === "parent" ? (
-          <>
-            <Link className="button secondary" to="/cabinet/parent#schedule">
-              {t("openSchedule")}
-            </Link>
-            <Link className="button secondary" to="/cabinet/parent#grades">
-              {t("openGrades")}
-            </Link>
-            <Link className="button secondary" to="/cabinet/parent#feedback">
-              {t("openFeedback")}
-            </Link>
-          </>
-        ) : !isResolvingRole && role === "child" ? (
-          <>
-            <Link className="button secondary" to="/cabinet/child#schedule">
-              {t("openSchedule")}
-            </Link>
-            <Link className="button secondary" to="/cabinet/child#grades">
-              {t("openGrades")}
-            </Link>
-          </>
-        ) : !isResolvingRole && role === "teacher" ? (
-          <>
-            <Link className="button secondary" to="/cabinet/teacher">
-              {t("openCabinet")}
-            </Link>
+      {!isResolvingRole && role !== "admin" && role !== "parent" ? (
+        <div className="row">
+          {role === "child" ? (
+            <>
+              <Link className="button secondary" to="/cabinet/child#schedule">
+                {t("openSchedule")}
+              </Link>
+              <Link className="button secondary" to="/cabinet/child#grades">
+                {t("openGrades")}
+              </Link>
+            </>
+          ) : role === "teacher" ? (
+            <>
+              <Link className="button secondary" to="/cabinet/teacher">
+                {t("openCabinet")}
+              </Link>
+              <Link className="button secondary" to="/schedule">
+                {t("openSchedule")}
+              </Link>
+            </>
+          ) : (
             <Link className="button secondary" to="/schedule">
-              {t("openSchedule")}
+              {t("scheduleTitle")}
             </Link>
-          </>
-        ) : !isResolvingRole ? (
-          <Link className="button secondary" to="/schedule">
-            {t("scheduleTitle")}
-          </Link>
-        ) : null}
-      </div>
+          )}
+        </div>
+      ) : null}
 
       {!isResolvingRole && role === "admin" ? (
         <DashboardLessonsCalendar

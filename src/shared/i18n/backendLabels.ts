@@ -52,3 +52,11 @@ export function localizeWeekDay(value: string | null | undefined, t: TFn): strin
   if (value === "sunday") return t("weekDaySunday");
   return value;
 }
+
+export function localizeAttendanceStatus(value: string, t: TFn): string {
+  if (value === "present") return t("backendAttendancePresent");
+  if (value === "absent") return t("backendAttendanceAbsent");
+  if (value === "late") return t("backendAttendanceLate");
+  if (value === "excused") return t("backendAttendanceExcused");
+  return value;
+}

@@ -89,19 +89,25 @@ async function rawRequest(
 ): Promise<Response> {
   const headers = new Headers(options.headers);
   const token = accessTokenOverride ?? getAccessToken();
+  const isFormDataBody = typeof FormData !== "undefined" && options.body instanceof FormData;
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  if (options.body !== undefined) {
+  if (options.body !== undefined && !isFormDataBody) {
     headers.set("Content-Type", "application/json");
   }
 
   return fetch(`${env.apiBaseUrl}${path}`, {
     ...options,
     headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined
+    body:
+      options.body === undefined
+        ? undefined
+        : isFormDataBody
+          ? (options.body as FormData)
+          : JSON.stringify(options.body)
   });
 }
 

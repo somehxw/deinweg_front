@@ -77,7 +77,7 @@ export function ParentDashboardLessonsCalendar({
   error,
   t
 }: ParentDashboardLessonsCalendarProps): JSX.Element {
-  const [dayScope, setDayScope] = useState<"all" | "saturday">("all");
+  const [dayScope, setDayScope] = useState<"all" | "saturday">("saturday");
   const grouped = useMemo(() => {
     const bucket = new Map<WeekDay, ParentLessonDto[]>();
     for (const day of WEEK_DAYS) {

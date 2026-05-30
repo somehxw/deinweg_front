@@ -241,6 +241,11 @@ a {
   gap: 4px;
 }
 
+.sidebar-teacher-group {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .sidebar-group-title {
   min-height: 34px;
   padding: 8px 12px;
@@ -439,8 +444,14 @@ a {
   color: var(--charcoal);
 }
 
+.field-hint {
+  font-size: 13px;
+  color: var(--slate);
+}
+
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   min-height: 52px;
   border: 1px solid var(--hairline-strong);
@@ -454,7 +465,8 @@ a {
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   outline: none;
   border-color: color-mix(in srgb, var(--primary) 58%, var(--hairline-strong));
   box-shadow: color-mix(in srgb, var(--primary) 22%, transparent) 0 0 0 4px;
@@ -960,6 +972,10 @@ a {
   margin-top: 22px;
 }
 
+.teacher-cabinet-panel .cabinet-section .form-grid {
+  margin-top: 24px;
+}
+
 .child-selector {
   display: flex;
   flex-wrap: wrap;
@@ -1140,6 +1156,115 @@ a {
 .compact-actions-table .icon-action-button {
   width: 34px;
   height: 34px;
+}
+
+.text-muted {
+  color: var(--slate);
+}
+
+.news-images-admin-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.news-image-admin-item {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border: 1px solid color-mix(in srgb, var(--hairline) 80%, transparent);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-soft);
+}
+
+.news-image-admin-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.news-image-admin-item .icon-action-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--canvas);
+}
+
+.attendance-student-cell {
+  display: grid;
+  gap: 4px;
+}
+
+.attendance-student-name {
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.attendance-student-id {
+  font-size: 12px;
+  color: var(--slate);
+  word-break: break-all;
+}
+
+.attendance-data-table .attendance-status-select {
+  min-height: 44px;
+  min-width: 200px;
+  width: 100%;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.attendance-data-table .attendance-comment-input {
+  min-height: 42px;
+  height: 42px;
+  width: min(100%, 320px);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+  line-height: 1.45;
+  resize: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.attendance-data-table .attendance-status-select:focus,
+.attendance-data-table .attendance-comment-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--primary) 58%, var(--hairline-strong));
+  box-shadow: color-mix(in srgb, var(--primary) 22%, transparent) 0 0 0 4px;
+}
+
+.attendance-save-button {
+  min-height: 42px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.attendance-bulk-row {
+  align-items: start;
+}
+
+.attendance-form-grid {
+  margin-top: 24px;
+}
+
+.attendance-bulk-row .field {
+  align-content: start;
+}
+
+.attendance-bulk-students-select {
+  min-height: 160px;
 }
 
 .status-form {
@@ -1720,8 +1845,16 @@ a {
   border-radius: 10px;
   background: var(--card-bg);
   box-shadow: rgba(0, 0, 0, 0.2) 0 8px 18px -8px;
-  min-width: 130px;
+  min-width: 240px;
   padding: 6px;
+}
+
+.dashboard-lesson-menu-field {
+  margin-bottom: 6px;
+}
+
+.dashboard-lesson-menu-field span {
+  font-size: 12px;
 }
 
 .dashboard-lesson-menu-item {

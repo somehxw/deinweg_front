@@ -1,10 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FiMoreHorizontal, FiPlus } from "react-icons/fi";
-import { cancelAdminLesson, updateAdminLesson } from "../../../shared/api/adminApi";
+import {
+  cancelAdminLesson,
+  getAdminTeachersList,
+  updateAdminLesson
+} from "../../../shared/api/adminApi";
 import { ApiError } from "../../../shared/api/httpClient";
 import { localizeWeekDay } from "../../../shared/i18n/backendLabels";
 import { TranslationKey } from "../../../shared/i18n/translations";
-import { AdminLessonDto, WeekDay } from "../../../shared/types/admin";
+import { AdminLessonDto, AdminTeacherItemDto, WeekDay } from "../../../shared/types/admin";
 import { AdminLessonCreateModal } from "../../admin/components/AdminLessonCreateModal";
 
 interface DashboardLessonsCalendarProps {
@@ -192,6 +196,9 @@ export function DashboardLessonsCalendar({
   const [actionLessonId, setActionLessonId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [menuLessonId, setMenuLessonId] = useState<string | null>(null);
+  const [teacherOptions, setTeacherOptions] = useState<AdminTeacherItemDto[]>([]);
+  const [assigningLessonId, setAssigningLessonId] = useState<string | null>(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>("");
   const [draggedLessonId, setDraggedLessonId] = useState<string | null>(null);
   const [dropTargetDay, setDropTargetDay] = useState<WeekDay | null>(null);
   const [dropTargetHour, setDropTargetHour] = useState<number | null>(null);
@@ -283,6 +290,26 @@ export function DashboardLessonsCalendar({
     return bucket;
   }, [filteredLessons]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTeachers(): Promise<void> {
+      try {
+        const response = await getAdminTeachersList();
+        if (!cancelled) {
+          setTeacherOptions(response);
+        }
+      } catch {
+        if (!cancelled) {
+          setTeacherOptions([]);
+        }
+      }
+    }
+    void loadTeachers();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function moveLessonToDay(lesson: AdminLessonDto, targetDay: WeekDay): Promise<void> {
     const currentDay = resolveWeekDay(lesson);
     if (!currentDay || currentDay === targetDay) {
@@ -333,6 +360,35 @@ export function DashboardLessonsCalendar({
     } finally {
       setActionLessonId(null);
     }
+  }
+
+  async function onAssignTeacherSubmit(lessonId: string): Promise<void> {
+    if (assigningLessonId !== lessonId) {
+      return;
+    }
+
+    setActionLessonId(lessonId);
+    setActionError(null);
+    try {
+      await updateAdminLesson(lessonId, { teacher: selectedTeacherId || null });
+      setMenuLessonId(null);
+      setAssigningLessonId(null);
+      setSelectedTeacherId("");
+      await onLessonsChanged();
+    } catch (actionLoadError) {
+      if (actionLoadError instanceof ApiError) {
+        setActionError(`${t("generalError")} (${actionLoadError.status})`);
+      } else {
+        setActionError(t("generalError"));
+      }
+    } finally {
+      setActionLessonId(null);
+    }
+  }
+
+  function onAssignTeacherOpen(lesson: AdminLessonDto): void {
+    setAssigningLessonId(lesson.id);
+    setSelectedTeacherId(lesson.teacher ?? "");
   }
 
   async function onDropToDay(targetDay: WeekDay): Promise<void> {
@@ -506,6 +562,9 @@ export function DashboardLessonsCalendar({
                                 className="dashboard-lesson-menu-trigger"
                                 aria-label={t("tableActions")}
                                 onClick={() => {
+                                  setAssigningLessonId((prevAssigning) =>
+                                    prevAssigning === lesson.id ? prevAssigning : null
+                                  );
                                   setMenuLessonId((prev) => (prev === lesson.id ? null : lesson.id));
                                 }}
                                 disabled={actionLessonId === lesson.id}
@@ -514,6 +573,42 @@ export function DashboardLessonsCalendar({
                               </button>
                               {menuLessonId === lesson.id ? (
                                 <div className="dashboard-lesson-menu">
+                                  {assigningLessonId === lesson.id ? (
+                                    <>
+                                      <label className="field dashboard-lesson-menu-field">
+                                        <span>{t("tableTeacher")}</span>
+                                        <select
+                                          value={selectedTeacherId}
+                                          onChange={(event) => setSelectedTeacherId(event.target.value)}
+                                          disabled={actionLessonId === lesson.id}
+                                        >
+                                          <option value="">{t("adminLessonsNoTeacher")}</option>
+                                          {teacherOptions.map((teacher) => (
+                                            <option key={teacher.id} value={teacher.id}>
+                                              {formatTeacherOptionLabel(teacher)}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                      <button
+                                        type="button"
+                                        className="dashboard-lesson-menu-item"
+                                        onClick={() => void onAssignTeacherSubmit(lesson.id)}
+                                        disabled={actionLessonId === lesson.id}
+                                      >
+                                        {t("saveAction")}
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="dashboard-lesson-menu-item"
+                                      onClick={() => onAssignTeacherOpen(lesson)}
+                                      disabled={actionLessonId === lesson.id}
+                                    >
+                                      {t("assignTeacherAction")}
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     className="dashboard-lesson-menu-item danger"
@@ -602,6 +697,9 @@ export function DashboardLessonsCalendar({
                               className="dashboard-lesson-menu-trigger"
                               aria-label={t("tableActions")}
                               onClick={() => {
+                                setAssigningLessonId((prevAssigning) =>
+                                  prevAssigning === lesson.id ? prevAssigning : null
+                                );
                                 setMenuLessonId((prev) => (prev === lesson.id ? null : lesson.id));
                               }}
                               disabled={actionLessonId === lesson.id}
@@ -610,6 +708,42 @@ export function DashboardLessonsCalendar({
                             </button>
                             {menuLessonId === lesson.id ? (
                               <div className="dashboard-lesson-menu">
+                                {assigningLessonId === lesson.id ? (
+                                  <>
+                                    <label className="field dashboard-lesson-menu-field">
+                                      <span>{t("tableTeacher")}</span>
+                                      <select
+                                        value={selectedTeacherId}
+                                        onChange={(event) => setSelectedTeacherId(event.target.value)}
+                                        disabled={actionLessonId === lesson.id}
+                                      >
+                                        <option value="">{t("adminLessonsNoTeacher")}</option>
+                                        {teacherOptions.map((teacher) => (
+                                          <option key={teacher.id} value={teacher.id}>
+                                            {formatTeacherOptionLabel(teacher)}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                    <button
+                                      type="button"
+                                      className="dashboard-lesson-menu-item"
+                                      onClick={() => void onAssignTeacherSubmit(lesson.id)}
+                                      disabled={actionLessonId === lesson.id}
+                                    >
+                                      {t("saveAction")}
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="dashboard-lesson-menu-item"
+                                    onClick={() => onAssignTeacherOpen(lesson)}
+                                    disabled={actionLessonId === lesson.id}
+                                  >
+                                    {t("assignTeacherAction")}
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   className="dashboard-lesson-menu-item danger"
@@ -643,4 +777,12 @@ export function DashboardLessonsCalendar({
       ) : null}
     </section>
   );
+}
+
+function formatTeacherOptionLabel(item: AdminTeacherItemDto): string {
+  const fullName = `${item.first_name ?? ""} ${item.last_name ?? ""}`.trim();
+  if (fullName) {
+    return `${fullName} (${item.email})`;
+  }
+  return item.email;
 }

@@ -1,9 +1,11 @@
 import { httpRequest } from "./httpClient";
 import {
+  ParentAttendanceDto,
   ParentChildDto,
   ParentChildrenPaginatedDto,
   ParentLessonDto
 } from "../types/parent";
+import { TeacherFeedbackDto } from "../types/teacher";
 
 type ParentChildrenResponse = ParentChildDto[] | ParentChildrenPaginatedDto;
 type ParentLessonsResponse =
@@ -68,7 +70,22 @@ function mapParentLessonItem(
       asString(item.state),
     topic: asString(item.topic) ?? asString(item.subject),
     room: asString(item.room),
-    class_name: asString(item.class_name) ?? asString(item.class)
+    class_name: asString(item.class_name) ?? asString(item.class),
+    teacher:
+      asString(item.teacher_name) ??
+      asString(item.teacher_display) ??
+      asString(item.teacher_email) ??
+      asString(item.teacher) ??
+      (item.teacher_info && typeof item.teacher_info === "object"
+        ? [
+            asString((item.teacher_info as Record<string, unknown>).first_name),
+            asString((item.teacher_info as Record<string, unknown>).last_name)
+          ]
+            .filter((value) => Boolean(value))
+            .join(" ")
+            .trim() ||
+          asString((item.teacher_info as Record<string, unknown>).user_email)
+        : undefined)
   };
 }
 
@@ -109,4 +126,16 @@ export async function getParentLessons(params?: ParentLessonsQuery): Promise<Par
   );
 
   return mapParentLessonsResponse(response);
+}
+
+export function getParentChildAttendance(studentId: string): Promise<ParentAttendanceDto[]> {
+  return httpRequest<ParentAttendanceDto[]>(`/api/v1/parent/me/children/${studentId}/attendance/`, {
+    method: "GET"
+  });
+}
+
+export function getParentChildFeedback(studentId: string): Promise<TeacherFeedbackDto[]> {
+  return httpRequest<TeacherFeedbackDto[]>(`/api/v1/parent/me/children/${studentId}/feedback/`, {
+    method: "GET"
+  });
 }

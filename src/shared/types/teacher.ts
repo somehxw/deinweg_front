@@ -36,3 +36,52 @@ export interface TeacherLessonDto {
   topic?: string;
   status?: string;
 }
+
+export interface TeacherClassStudentDto {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+}
+
+export interface TeacherAttendanceDto {
+  id: string;
+  lesson: string;
+  student: string;
+  status: "present" | "absent" | "late" | "excused";
+  comment?: string;
+}
+
+export interface TeacherAttendanceBulkItemDto {
+  student_id: string;
+  status: "present" | "absent" | "late" | "excused";
+  comment?: string;
+}
+
+export interface TeacherAttendanceBulkUpsertDto {
+  items: TeacherAttendanceBulkItemDto[];
+}
+
+export interface TeacherAttendancePatchDto {
+  status?: "present" | "absent" | "late" | "excused";
+  comment?: string;
+}
+
+export interface TeacherFeedbackDto {
+  id: string;
+  lesson: string;
+  student: string;
+  teacher: string;
+  text: string;
+  created_at: string;
+  lesson_topic?: string;
+}
+
+export interface TeacherFeedbackCreateDto {
+  lesson: string;
+  student: string;
+  text: string;
+}
+
+export interface TeacherFeedbackUpdateDto {
+  text?: string;
+}

@@ -19,6 +19,7 @@ import { AdminUsersPage } from "../pages/admin/AdminUsersPage";
 import { AdminClassesPage } from "../pages/admin/AdminClassesPage";
 import { AdminLessonsPage } from "../pages/admin/AdminLessonsPage";
 import { AdminParentStudentLinksPage } from "../pages/admin/AdminParentStudentLinksPage";
+import { AdminNewsPage } from "../pages/admin/AdminNewsPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { NewsPage } from "../pages/news/NewsPage";
 import { RequireAuth } from "./guards/RequireAuth";
@@ -133,6 +134,10 @@ export const router = createBrowserRouter([
                   {
                     path: "parent-student-links",
                     element: <AdminParentStudentLinksPage />
+                  },
+                  {
+                    path: "news",
+                    element: <AdminNewsPage />
                   },
                   {
                     path: "students",

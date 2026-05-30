@@ -1,6 +1,13 @@
 import { httpRequest } from "./httpClient";
 import {
+  TeacherAttendanceDto,
+  TeacherAttendanceBulkUpsertDto,
+  TeacherAttendancePatchDto,
+  TeacherClassStudentDto,
   TeacherCurriculumPlanDto,
+  TeacherFeedbackCreateDto,
+  TeacherFeedbackDto,
+  TeacherFeedbackUpdateDto,
   TeacherLessonDto,
   TeacherProfileDto,
   TeacherProfileUpdateDto
@@ -43,4 +50,76 @@ export function getTeacherMeLessons(params?: {
   return httpRequest<TeacherLessonDto[]>(`/api/v1/teacher/me/lessons/${suffix}`, {
     method: "GET"
   });
+}
+
+function mapTeacherFeedback(raw: TeacherFeedbackDto): TeacherFeedbackDto {
+  return {
+    ...raw,
+    lesson_topic: raw.lesson_topic
+  };
+}
+
+export async function getTeacherLessonFeedback(lessonId: string): Promise<TeacherFeedbackDto[]> {
+  const response = await httpRequest<TeacherFeedbackDto[]>(`/api/v1/teacher/lessons/${lessonId}/feedback/`, {
+    method: "GET"
+  });
+  return response.map(mapTeacherFeedback);
+}
+
+export function getTeacherLessonAttendance(lessonId: string): Promise<TeacherAttendanceDto[]> {
+  return httpRequest<TeacherAttendanceDto[]>(`/api/v1/teacher/lessons/${lessonId}/attendance/`, {
+    method: "GET"
+  });
+}
+
+export function getTeacherClassStudents(classId: string): Promise<TeacherClassStudentDto[]> {
+  return httpRequest<TeacherClassStudentDto[]>(`/api/v1/teacher/classes/${classId}/students/`, {
+    method: "GET"
+  });
+}
+
+export function upsertTeacherLessonAttendance(
+  lessonId: string,
+  payload: TeacherAttendanceBulkUpsertDto
+): Promise<TeacherAttendanceDto[]> {
+  return httpRequest<TeacherAttendanceDto[]>(`/api/v1/teacher/lessons/${lessonId}/attendance/`, {
+    method: "POST",
+    body: payload
+  });
+}
+
+export function patchTeacherLessonAttendance(
+  lessonId: string,
+  studentId: string,
+  payload: TeacherAttendancePatchDto
+): Promise<TeacherAttendanceDto> {
+  return httpRequest<TeacherAttendanceDto>(
+    `/api/v1/teacher/lessons/${lessonId}/attendance/${studentId}/`,
+    {
+      method: "PATCH",
+      body: payload
+    }
+  );
+}
+
+export async function createTeacherLessonFeedback(
+  lessonId: string,
+  payload: TeacherFeedbackCreateDto
+): Promise<TeacherFeedbackDto> {
+  const response = await httpRequest<TeacherFeedbackDto>(`/api/v1/teacher/lessons/${lessonId}/feedback/`, {
+    method: "POST",
+    body: payload
+  });
+  return mapTeacherFeedback(response);
+}
+
+export async function updateTeacherFeedback(
+  feedbackId: string,
+  payload: TeacherFeedbackUpdateDto
+): Promise<TeacherFeedbackDto> {
+  const response = await httpRequest<TeacherFeedbackDto>(`/api/v1/teacher/feedback/${feedbackId}/`, {
+    method: "PATCH",
+    body: payload
+  });
+  return mapTeacherFeedback(response);
 }
