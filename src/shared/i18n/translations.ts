@@ -359,7 +359,7 @@ export const translations = {
 
     notFoundTitle: "Сторінку не знайдено",
     notFoundBack: "На головну",
-    notFoundDescription: "Сторінка може бути видалена або переміщена.",
+    notFoundDescription: "На жаль, сторінку не знайдено. Перевірте адресу або поверніться на головну.",
     notFoundActionNews: "Перейти до новин",
     notFoundActionEnrollment: "Подати заявку"
   },
@@ -718,7 +718,7 @@ export const translations = {
 
     notFoundTitle: "Seite nicht gefunden",
     notFoundBack: "Zur Startseite",
-    notFoundDescription: "Die Seite wurde entfernt oder an eine andere Adresse verschoben.",
+    notFoundDescription: "Leider wurde die Seite nicht gefunden. Prüfen Sie die Adresse oder gehen Sie zur Startseite zurück.",
     notFoundActionNews: "Zu den Neuigkeiten",
     notFoundActionEnrollment: "Antrag senden"
   }

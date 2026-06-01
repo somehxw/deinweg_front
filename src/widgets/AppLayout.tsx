@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useMatches, useNavigate } from "react-router-dom";
 import { FloatingControls } from "../features/preferences/FloatingControls";
 import { clearAccessToken, hasAccessToken } from "../shared/auth/tokenStorage";
 import { useI18n } from "../shared/i18n/I18nProvider";
@@ -7,7 +7,12 @@ import { AppSidebar } from "./AppSidebar";
 export function AppLayout(): JSX.Element {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const matches = useMatches();
   const isAuthorized = hasAccessToken();
+  const hideChrome = matches.some((match) => {
+    const handle = match.handle as { hideChrome?: boolean } | undefined;
+    return Boolean(handle?.hideChrome);
+  });
 
   function handleLogout(): void {
     clearAccessToken();
@@ -15,23 +20,25 @@ export function AppLayout(): JSX.Element {
   }
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="container topbar-row">
-          <Link to="/home" className="brand">
+    <div className={`app-shell${hideChrome ? " app-shell-not-found" : ""}`}>
+      <header className={`topbar${hideChrome ? " topbar-not-found" : ""}`}>
+        <div className={`container topbar-row${hideChrome ? " topbar-row-centered" : ""}`}>
+          <Link to={isAuthorized && !hideChrome ? "/home" : "/"} className="brand">
             <span className="brand-mark">d</span>
             <span>{t("appTitle")}</span>
           </Link>
-          <nav className="nav">
-            {isAuthorized ? (
-              <button type="button" className="topbar-logout" onClick={handleLogout}>
-                {t("logout")}
-              </button>
-            ) : null}
-          </nav>
+          {!hideChrome ? (
+            <nav className="nav">
+              {isAuthorized ? (
+                <button type="button" className="topbar-logout" onClick={handleLogout}>
+                  {t("logout")}
+                </button>
+              ) : null}
+            </nav>
+          ) : null}
         </div>
       </header>
-      {isAuthorized ? (
+      {isAuthorized && !hideChrome ? (
         <main className="section app-main-auth">
           <div className="container app-main-grid">
             <AppSidebar />
@@ -41,13 +48,13 @@ export function AppLayout(): JSX.Element {
           </div>
         </main>
       ) : (
-        <main className="section">
+        <main className={`section${hideChrome ? " section-not-found" : ""}`}>
           <div className="container">
             <Outlet />
           </div>
         </main>
       )}
-      <FloatingControls />
+      {!hideChrome ? <FloatingControls /> : null}
     </div>
   );
 }

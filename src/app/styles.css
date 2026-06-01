@@ -70,6 +70,41 @@ a {
   gap: 16px;
 }
 
+.topbar-row-centered {
+  justify-content: center;
+}
+
+.app-shell-not-found .topbar {
+  position: static;
+  background: #ffffff;
+  backdrop-filter: none;
+}
+
+.app-shell-not-found {
+  font-family: "Inter", "Notion Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app-shell-not-found .container {
+  width: 100%;
+}
+
+.app-shell-not-found .topbar-row {
+  min-height: 82px;
+  padding: 0 24px;
+}
+
+.app-shell-not-found .brand {
+  gap: 12px;
+  font-size: clamp(36px, 2.7vw, 48px);
+}
+
+.app-shell-not-found .brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 26px;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -166,6 +201,10 @@ a {
 
 .section {
   padding: 56px 0 72px;
+}
+
+.section-not-found {
+  padding: 0;
 }
 
 .app-main-auth {
@@ -1444,37 +1483,50 @@ a {
 }
 
 .not-found-page {
-  max-width: 780px;
-  margin: 0 auto;
-  border-radius: 22px;
-  padding: 34px 30px;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  min-height: calc(100vh - 83px);
+  background: #f5f5f6;
+  border-radius: 0;
+  padding: 36px 20px 72px;
   display: grid;
-  gap: 10px;
+  place-items: center;
+}
+
+.not-found-simple {
+  width: min(100%, 760px);
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  text-align: center;
+  margin-top: 0;
 }
 
 .not-found-code {
   margin: 0;
-  width: fit-content;
-  border: 1px solid color-mix(in srgb, var(--primary) 36%, var(--hairline-strong));
-  border-radius: 6px;
-  padding: 2px 8px;
-  color: var(--primary);
-  font-size: 13px;
+  color: #1d4ed8;
+  font-size: clamp(118px, 20vw, 260px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.not-found-title {
+  margin: 0;
+  color: #111111;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.12;
   font-weight: 600;
-  line-height: 1.4;
 }
 
-.not-found-subline {
-  margin-top: 0;
-  margin-bottom: 4px;
-  font-size: 17px;
-}
-
-.not-found-actions {
-  margin-top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.not-found-description {
+  margin: 20px auto 0;
+  color: #111111;
+  font-size: clamp(20px, 2.1vw, 32px);
+  line-height: 1.35;
+  max-width: 680px;
+  font-weight: 500;
 }
 
 @media (max-width: 860px) {
@@ -1597,18 +1649,17 @@ a {
   }
 
   .not-found-page {
-    padding: 24px 22px;
-    border-radius: 18px;
+    min-height: calc(100vh - 83px);
+    padding: 28px 14px 48px;
   }
 
-  .not-found-actions {
-    display: grid;
-    grid-template-columns: 1fr;
+  .not-found-code {
+    font-size: clamp(96px, 30vw, 160px);
   }
 
-  .not-found-actions .button {
-    width: 100%;
-    justify-content: center;
+  .not-found-description {
+    font-size: clamp(18px, 4.8vw, 24px);
+    max-width: 420px;
   }
 }
 
