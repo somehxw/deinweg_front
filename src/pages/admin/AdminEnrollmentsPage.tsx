@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { FiCheck, FiCornerUpLeft, FiX } from "react-icons/fi";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FiBell, FiCheck, FiCornerUpLeft, FiX } from "react-icons/fi";
 import {
   approveEnrollmentRequest,
   getAdminEnrollmentList,
@@ -7,9 +7,12 @@ import {
   requestEnrollmentRelink
 } from "../../shared/api/adminApi";
 import { ApiError } from "../../shared/api/httpClient";
+import { getAccessToken } from "../../shared/auth/tokenStorage";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import { localizeEnrollmentStatus } from "../../shared/i18n/backendLabels";
+import { useEnrollmentWebSocket } from "../../shared/realtime/useEnrollmentWebSocket";
 import { AdminEnrollmentItemDto } from "../../shared/types/admin";
+import { EnrollmentCreatedEventData } from "../../shared/types/enrollmentRealtime";
 import { EnrollmentRequestStatus } from "../../shared/types/enrollment";
 
 const ACTIVE_STATUSES: EnrollmentRequestStatus[] = [
@@ -28,8 +31,13 @@ export function AdminEnrollmentsPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(() => getAccessToken());
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<string[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationsRef = useRef<HTMLDivElement | null>(null);
 
-  async function loadEnrollments(): Promise<void> {
+  const loadEnrollments = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -47,11 +55,74 @@ export function AdminEnrollmentsPage(): JSX.Element {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [search, statusFilter, t]);
 
   useEffect(() => {
     void loadEnrollments();
-  }, [t, search, statusFilter]);
+  }, [loadEnrollments]);
+
+  useEffect(() => {
+    const tokenWatcherId = window.setInterval(() => {
+      const nextToken = getAccessToken();
+      setAccessToken((currentToken) => (currentToken === nextToken ? currentToken : nextToken));
+    }, 1000);
+
+    return () => {
+      window.clearInterval(tokenWatcherId);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent): void {
+      if (!notificationsRef.current) {
+        return;
+      }
+
+      const clickTarget = event.target;
+      if (clickTarget instanceof Node && !notificationsRef.current.contains(clickTarget)) {
+        setIsNotificationsOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent): void {
+      if (event.key === "Escape") {
+        setIsNotificationsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  const toggleNotifications = useCallback((): void => {
+    setIsNotificationsOpen((current) => {
+      const next = !current;
+      if (next) {
+        setUnreadCount(0);
+      }
+      return next;
+    });
+  }, []);
+
+  const onEnrollmentCreated = useCallback(
+    (createdItem: EnrollmentCreatedEventData): void => {
+      const parentFullName = `${createdItem.parent_first_name} ${createdItem.parent_last_name}`.trim();
+      const nextNotification = parentFullName
+        ? `${t("adminNotificationNewEnrollmentFrom")} ${parentFullName}`
+        : t("adminNotificationNewEnrollment");
+      setNotifications((current) => [nextNotification, ...current].slice(0, 10));
+      setUnreadCount((current) => current + 1);
+      void loadEnrollments();
+    },
+    [loadEnrollments, t]
+  );
+
+  useEnrollmentWebSocket(accessToken, onEnrollmentCreated);
 
   async function runModerationAction(
     id: string,
@@ -83,8 +154,40 @@ export function AdminEnrollmentsPage(): JSX.Element {
 
   return (
     <section className="admin-page">
-      <h2 className="section-heading">{t("adminEnrollmentsTitle")}</h2>
-      <p className="subline">{t("adminEnrollmentsDescription")}</p>
+      <div className="admin-page-header">
+        <div>
+          <h2 className="section-heading">{t("adminEnrollmentsTitle")}</h2>
+          <p className="subline">{t("adminEnrollmentsDescription")}</p>
+        </div>
+        <div className="admin-notifications" ref={notificationsRef}>
+          <button
+            type="button"
+            className="icon-action-button admin-notifications-toggle"
+            aria-label={t("adminNotificationsLabel")}
+            title={t("adminNotificationsLabel")}
+            onClick={toggleNotifications}
+          >
+            <FiBell aria-hidden="true" />
+            {unreadCount > 0 ? <span className="admin-notifications-badge">{Math.min(unreadCount, 99)}</span> : null}
+          </button>
+          {isNotificationsOpen ? (
+            <div className="admin-notifications-menu" role="dialog" aria-label={t("adminNotificationsTitle")}>
+              <p className="admin-notifications-title">{t("adminNotificationsTitle")}</p>
+              {notifications.length === 0 ? (
+                <p className="admin-notifications-empty">{t("adminNotificationsEmpty")}</p>
+              ) : (
+                <ul className="admin-notifications-list">
+                  {notifications.map((item, index) => (
+                    <li key={`${index}-${item}`} className="admin-notifications-item">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </div>
       <div className="row">
         <label className="field admin-filter-field">
           <span>{t("searchLabel")}</span>
