@@ -5,6 +5,7 @@ import { TeacherFeedbackDto } from "../../../shared/types/teacher";
 interface ParentFeedbackTableProps {
   items: TeacherFeedbackDto[];
   t: (key: TranslationKey) => string;
+  resolveLessonTitle?: (lessonId: string, lessonTopic?: string) => string;
 }
 
 function formatDateTime(value: string): string {
@@ -22,7 +23,11 @@ function formatDateTime(value: string): string {
   }).format(date);
 }
 
-export function ParentFeedbackTable({ items, t }: ParentFeedbackTableProps): JSX.Element {
+export function ParentFeedbackTable({
+  items,
+  t,
+  resolveLessonTitle
+}: ParentFeedbackTableProps): JSX.Element {
   const sortedItems = useMemo(() => {
     const next = [...items];
     next.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -47,7 +52,11 @@ export function ParentFeedbackTable({ items, t }: ParentFeedbackTableProps): JSX
           {sortedItems.map((item) => (
             <tr key={item.id}>
               <td>{formatDateTime(item.created_at)}</td>
-              <td>{item.lesson_topic || `#${item.lesson.slice(0, 8)}`}</td>
+              <td>
+                {resolveLessonTitle
+                  ? resolveLessonTitle(item.lesson, item.lesson_topic)
+                  : item.lesson_topic || "-"}
+              </td>
               <td>{item.text}</td>
             </tr>
           ))}
