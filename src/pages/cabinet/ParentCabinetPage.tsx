@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   getParentChildAttendance,
@@ -65,6 +65,10 @@ function resolveWeekDay(lesson: ParentLessonDto): WeekDay | null {
   };
 
   return mapped[date.getDay()] ?? null;
+}
+
+function isLessonTag(value: string): boolean {
+  return /^#[0-9a-f]{6,}$/i.test(value);
 }
 
 export function ParentCabinetPage(): JSX.Element {
@@ -234,6 +238,19 @@ export function ParentCabinetPage(): JSX.Element {
     return map;
   }, [lessons]);
 
+  const resolveLessonTitle = useCallback(
+    (lessonId: string, lessonTopic?: string): string => {
+      const topic = lessonTopic?.trim();
+      if (topic && !isLessonTag(topic)) {
+        return topic;
+      }
+
+      const topicFromLesson = lessonsById.get(lessonId)?.topic?.trim();
+      return topicFromLesson || "-";
+    },
+    [lessonsById]
+  );
+
   const scheduleByDay = useMemo(() => {
     const map = new Map<WeekDay, ParentLessonDto[]>();
     WEEK_DAYS.forEach((day) => map.set(day, []));
@@ -381,7 +398,7 @@ export function ParentCabinetPage(): JSX.Element {
                         const dateTime = lesson ? formatDateTime(lesson.starts_at) : { date: "-", time: "-" };
                         return (
                           <tr key={item.id}>
-                            <td>{lesson?.topic ?? `#${item.lesson.slice(0, 8)}`}</td>
+                            <td>{resolveLessonTitle(item.lesson, lesson?.topic)}</td>
                             <td>{`${dateTime.date}, ${dateTime.time}`}</td>
                             <td>{localizeAttendanceStatus(item.status, t)}</td>
                             <td>{item.comment?.trim() ? item.comment : "-"}</td>
@@ -401,7 +418,7 @@ export function ParentCabinetPage(): JSX.Element {
               {isFeedbackLoading ? <p>{t("listLoading")}</p> : null}
               {feedbackError ? <p className="error-text">{feedbackError}</p> : null}
               {!isFeedbackLoading && !feedbackError ? (
-                <ParentFeedbackTable items={feedback} t={t} />
+                <ParentFeedbackTable items={feedback} t={t} resolveLessonTitle={resolveLessonTitle} />
               ) : null}
             </div>
           ) : null}
